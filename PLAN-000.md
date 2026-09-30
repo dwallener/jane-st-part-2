@@ -34,6 +34,23 @@ around a reference model and portable synthesizable Verilog. Full hardening is
 not the daily test loop. It returns at architectural milestones and as soon as
 the memory strategy becomes concrete.
 
+### CI dispatch policy
+
+As of 2026-09-30, ordinary pushes run the fast RTL and documentation checks but
+do not automatically launch the full CMOS5L physical-design flow. The `gds`
+workflow is manual (`workflow_dispatch`) and is started deliberately from the
+GitHub Actions interface or with:
+
+```sh
+gh workflow run gds.yaml
+```
+
+This policy prevents routine commits from starting synthesis, place-and-route,
+precheck, gate-level simulation, and Pages deployment. Run the physical flow
+after changes to the top-level boundary, clock/reset assumptions, memory
+implementation, hardening configuration, or at an explicit architecture
+milestone. The fast RTL workflow remains the required check on normal pushes.
+
 ```text
 reference model
       <-> differential tests
