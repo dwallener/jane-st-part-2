@@ -23,7 +23,10 @@ jobs:
         shell: bash
         run: pip install -r test/requirements.txt
 
-      - name: Run tests
+      - name: Run minimum mindreader experiment
+        run: python3 -m unittest discover -s experiments/minimum_mindreader -p 'test_*.py'
+
+      - name: Run RTL tests
         run: |
           cd test
           make clean
