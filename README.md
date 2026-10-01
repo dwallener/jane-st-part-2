@@ -250,6 +250,11 @@ Human-readable timing diagrams should be executable test fixtures. A protocol
 example in the documentation should be the same artifact used to test the
 implementation.
 
+The known-protocol benchmark begins with 13 anonymous-pin waveforms spanning
+all four SPI modes in both bit orders, UART 8N1, and an acknowledged I²C write.
+Protocol labels and pin roles are scorer-only truth, never learner input. See
+`docs/CORPUS-000.md`.
+
 ## Success criteria
 
 The project is successful if the following can be demonstrated within the ASIC

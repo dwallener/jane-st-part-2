@@ -72,7 +72,6 @@ than baking 8-bit symbols into the protocol engine.
 
 ## Next bounded question
 
-The natural extension is variable-length framing. Hold physical roles fixed
-and compare two finite hypotheses: an explicit length field versus a terminal
-delimiter. That begins to exercise the metadata and payload phases without
-assuming either one is mandatory.
+`FRAMING-000.md` implements the variable-length extension. It compares bounded
+explicit-length and terminal-delimiter hypotheses, then requires the surviving
+model to segment a held-out stream whose frame boundaries are absent.

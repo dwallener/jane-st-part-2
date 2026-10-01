@@ -128,6 +128,23 @@ step, not the overall project.
     and six-bit fixtures recover their exact request/response phase widths.
     Every divisor remains an equivalent symbol granularity, separating
     observable bit count from unobservable word naming. See `WIDTH-000.md`.
+11. **Variable framing — implemented for length and delimiter hypotheses.**
+    Learned rules segment boundary-free held-out streams; ambiguous training
+    retains both explanations until additional evidence distinguishes them.
+    See `FRAMING-000.md`.
+12. **Integrity inference — implemented for a bounded one-byte catalog.**
+    Constant, XOR, two additive rules, and four named CRC-8 configurations
+    compete against held-out frames. Ambiguous rules produce a distinguishing
+    payload probe rather than an arbitrary winner. See `INTEGRITY-000.md`.
+13. **Known-protocol benchmark — first tranche implemented.** Thirteen golden
+    anonymous-pin waveforms cover SPI modes 0–3 in both bit orders, four UART
+    8N1 values, and one acknowledged I²C write. Reference decoders pass; the
+    learner has not yet been scored against them. See `CORPUS-000.md`.
+14. **Known-corpus capture score — implemented.** Every waveform round-trips
+    through the anonymous delta-edge representation and yields a pin activity
+    profile. All 13 cases then fail the current selected-serial frontend for
+    documented topology reasons, establishing an honest baseline rather than
+    retrofitting the benchmark. See `CORPUS-000.md`.
 
 Each step must retain the replay control, an unseen valid exchange, an unknown
 request, and an insufficient-evidence case. A step does not pass merely because

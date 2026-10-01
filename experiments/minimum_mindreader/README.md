@@ -21,6 +21,10 @@ python3 experiments/minimum_mindreader/run_protocol_program.py
 python3 experiments/minimum_mindreader/run_framing_experiment.py
 python3 experiments/minimum_mindreader/run_role_experiment.py
 python3 experiments/minimum_mindreader/run_width_experiment.py
+python3 experiments/minimum_mindreader/run_variable_framing.py
+python3 experiments/minimum_mindreader/run_integrity_experiment.py
+python3 experiments/minimum_mindreader/run_known_corpus.py
+python3 experiments/minimum_mindreader/run_corpus_score.py
 ```
 
 Run the tests:
@@ -63,3 +67,23 @@ The width experiment observes exact request and response bit counts from the
 framed phases, then retains every divisor as a compatible symbol granularity.
 It covers both eight-bit and six-bit fixtures to avoid baking byte assumptions
 into the protocol grammar. See `docs/WIDTH-000.md`.
+
+The variable-framing experiment learns either a bounded length-field rule or
+an unescaped terminal delimiter, then segments held-out streams without frame
+boundaries. A controlled ambiguous corpus retains both models until one more
+frame distinguishes them. See `docs/FRAMING-000.md`.
+
+The integrity experiment compares a constant negative control, XOR, additive
+checksums, and four named CRC-8 configurations. It validates held-out corruption
+and proposes a distinguishing payload when multiple rules fit. See
+`docs/INTEGRITY-000.md`.
+
+The known-protocol corpus begins with 13 golden waveforms covering SPI, UART,
+and I²C. Inference receives anonymous indexed-pin samples; protocol labels,
+roles, and expected symbols remain scorer-only. The current gate validates the
+reference fixtures, not learner success. See `docs/CORPUS-000.md`.
+
+The corpus scorer losslessly converts every golden waveform to anonymous edge
+events and profiles each pin. Its initial failure matrix deliberately stops all
+13 cases before the current selected-serial frontend, documenting why SPI,
+UART, and I²C each violate that frontend's topology assumptions.
