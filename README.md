@@ -4,7 +4,8 @@
 > digital peripheral, explains what it knows, and can impersonate the original
 > device.
 
-**Status:** active feasibility prototype. The architecture is not frozen.
+**Status:** autonomous SPI tapeout candidate integrated; CMOS5L physical
+closure pending.
 
 This is a prospective entry for Jane Street's
 [Protocol Emulator ASIC Competition](https://blog.janestreet.com/protocol-emulator-asic-competition/).

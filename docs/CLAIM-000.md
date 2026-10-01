@@ -222,6 +222,13 @@ step, not the overall project.
     evidence and equivalence remaining, held-out behavior, replay failure,
     refusal, and unsupported claims. See `ADVERSARIAL-000.md` and
     `BENCHMARK-000.md`.
+30. **TinyTapeout product integration — implemented in RTL.** The disposable
+    counter top has been replaced by the autonomous SPI mindreader, observed
+    timing admission, and immediate contention cutoff. The public pin contract
+    exposes training authority and safety status. A top-level cocotb test learns
+    from anonymous traffic and answers unseen request `0xA7` through the actual
+    TinyTapeout wrapper. Physical fit remains a backend result. See
+    `TT-INTEGRATION-000.md`.
 
 Each step must retain the replay control, an unseen valid exchange, an unknown
 request, and an insufficient-evidence case. A step does not pass merely because

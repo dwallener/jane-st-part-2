@@ -15,7 +15,11 @@ module autonomous_spi_mindreader (
     output wire [7:0] evidence_count, output wire [2:0] supervisor_state,
     output wire [2:0] fault_reason, output wire promotion_rejected,
     output wire transfer_valid, output wire [7:0] transfer_request,
-    output wire transfer_unknown
+    output wire transfer_unknown,
+    output wire [1:0] inferred_select_pin, inferred_clock_pin,
+    output wire [1:0] inferred_data_a_pin, inferred_data_b_pin,
+    output wire inferred_select_active_level, inferred_clock_idle_level,
+    output wire inferred_sample_trailing
 );
   wire physical_ready;
   wire [1:0] select_pin, clock_pin, data_a_pin, data_b_pin;
@@ -108,5 +112,13 @@ module autonomous_spi_mindreader (
       .transfer_valid(transfer_valid), .transfer_request(transfer_request),
       .transfer_unknown(transfer_unknown)
   );
+
+  assign inferred_select_pin = select_pin;
+  assign inferred_clock_pin = clock_pin;
+  assign inferred_data_a_pin = data_a_pin;
+  assign inferred_data_b_pin = data_b_pin;
+  assign inferred_select_active_level = select_active_level;
+  assign inferred_clock_idle_level = clock_idle_level;
+  assign inferred_sample_trailing = sample_trailing;
 endmodule
 `default_nettype wire

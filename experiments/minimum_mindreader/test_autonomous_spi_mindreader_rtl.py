@@ -90,6 +90,8 @@ wire [3:0] pin_out,pin_oe; wire physical_complete,direction_resolved;
 wire frozen_model_valid,drive_enable; wire [7:0] evidence_count;
 wire [2:0] supervisor_state,fault_reason; wire promotion_rejected;
 wire transfer_valid; wire [7:0] transfer_request; wire transfer_unknown;
+wire [1:0] inferred_select_pin,inferred_clock_pin,inferred_data_a_pin,inferred_data_b_pin;
+wire inferred_select_active_level,inferred_clock_idle_level,inferred_sample_trailing;
 always #5 clk=~clk;
 autonomous_spi_mindreader dut(.*);
 task tick; begin @(posedge clk); #1; end endtask

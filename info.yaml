@@ -1,9 +1,9 @@
 # Tiny Tapeout project information
 project:
-  title:        "Protocol Doppelganger CMOS5L smoke test"
+  title:        "Protocol Doppelganger autonomous SPI mindreader"
   author:       "Damir Wallener"
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "Portable-core and Tiny Tapeout wrapper bring-up"
+  description:  "Passively infers and safely impersonates a bounded unknown SPI peripheral"
   language:     "Verilog"
   clock_hz:     50000000
 
@@ -19,41 +19,49 @@ project:
   source_files:
     - "mindreader_core.v"
     - "template_learner.v"
-    - "template_executor.v"
+    - "mindreader_supervisor.v"
+    - "spi_physical_learner.v"
+    - "spi_transaction_decoder.v"
+    - "dual_direction_learner.v"
+    - "learned_model_promoter.v"
+    - "template_spi_peripheral.v"
+    - "spi_timing_guard.v"
+    - "pin_contention_monitor.v"
+    - "autonomous_spi_mindreader.v"
     - "project.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: "smoke input 0"
-  ui[1]: "smoke input 1"
-  ui[2]: "smoke input 2"
-  ui[3]: "smoke input 3"
-  ui[4]: "smoke input 4"
-  ui[5]: "smoke input 5"
-  ui[6]: "smoke input 6"
-  ui[7]: "smoke input 7"
+  ui[0]: "discover enable"
+  ui[1]: "learn enable"
+  ui[2]: "promote learned model"
+  ui[3]: "ownership granted"
+  ui[4]: "activate emulation"
+  ui[5]: "revoke emulation"
+  ui[6]: "clear fault"
+  ui[7]: "inject contradiction"
 
   # Outputs
-  uo[0]: "smoke output 0"
-  uo[1]: "smoke output 1"
-  uo[2]: "smoke output 2"
-  uo[3]: "smoke output 3"
-  uo[4]: "smoke output 4"
-  uo[5]: "smoke output 5"
-  uo[6]: "smoke output 6"
-  uo[7]: "smoke output 7"
+  uo[0]: "physical inference complete"
+  uo[1]: "data direction resolved"
+  uo[2]: "frozen model valid"
+  uo[3]: "protocol drive enabled"
+  uo[4]: "timing observed"
+  uo[5]: "timing admissible"
+  uo[6]: "contention fault"
+  uo[7]: "promotion rejected"
 
   # Bidirectional pins
-  uio[0]: "smoke bidirectional 0"
-  uio[1]: "smoke bidirectional 1"
-  uio[2]: "smoke bidirectional 2"
-  uio[3]: "smoke bidirectional 3"
-  uio[4]: "smoke bidirectional 4"
-  uio[5]: "smoke bidirectional 5"
-  uio[6]: "smoke bidirectional 6"
-  uio[7]: "smoke bidirectional 7"
+  uio[0]: "anonymous protocol pin 0"
+  uio[1]: "anonymous protocol pin 1"
+  uio[2]: "anonymous protocol pin 2"
+  uio[3]: "anonymous protocol pin 3"
+  uio[4]: "reserved"
+  uio[5]: "reserved"
+  uio[6]: "reserved"
+  uio[7]: "reserved"
 
 # Do not change!
 yaml_version: 6
