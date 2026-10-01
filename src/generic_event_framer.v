@@ -39,7 +39,8 @@ module generic_event_framer #(
   reg [7:0] first_event_mask;
   reg [7:0] last_event_mask;
   reg [7:0] changed;
-  integer pin_index;
+  integer comb_pin_index;
+  integer seq_pin_index;
   integer event_increment;
   integer class_count;
 
@@ -48,11 +49,13 @@ module generic_event_framer #(
 
   always @* begin
     control_candidate_mask = 0;
-    for (pin_index = 0; pin_index < 8; pin_index = pin_index + 1)
-      if ((transition_count[pin_index] == 2) &&
-          first_event_mask[pin_index] && last_event_mask[pin_index] &&
+    for (comb_pin_index = 0; comb_pin_index < 8;
+         comb_pin_index = comb_pin_index + 1)
+      if ((transition_count[comb_pin_index] == 2) &&
+          first_event_mask[comb_pin_index] &&
+          last_event_mask[comb_pin_index] &&
           ((completed_first_events + current_burst_events) > 2))
-        control_candidate_mask[pin_index] = 1'b1;
+        control_candidate_mask[comb_pin_index] = 1'b1;
 
     first_burst_events = completed_first_events;
     latest_burst_events = current_burst_events;
@@ -82,8 +85,9 @@ module generic_event_framer #(
       event_seen <= 1'b0;
       first_event_mask <= 0;
       last_event_mask <= 0;
-      for (pin_index = 0; pin_index < 8; pin_index = pin_index + 1)
-        transition_count[pin_index] <= 0;
+      for (seq_pin_index = 0; seq_pin_index < 8;
+           seq_pin_index = seq_pin_index + 1)
+        transition_count[seq_pin_index] <= 0;
     end else if (observe_enable && !running) begin
       running <= 1'b1;
       ready <= 1'b0;
@@ -97,18 +101,20 @@ module generic_event_framer #(
       event_seen <= 1'b0;
       first_event_mask <= 0;
       last_event_mask <= 0;
-      for (pin_index = 0; pin_index < 8; pin_index = pin_index + 1)
-        transition_count[pin_index] <= 0;
+      for (seq_pin_index = 0; seq_pin_index < 8;
+           seq_pin_index = seq_pin_index + 1)
+        transition_count[seq_pin_index] <= 0;
     end else if (observe_enable && running) begin
       changed = previous_sample ^ pin_sample;
       previous_sample <= pin_sample;
       event_increment = 0;
-      for (pin_index = 0; pin_index < 8; pin_index = pin_index + 1) begin
-        if (changed[pin_index]) begin
+      for (seq_pin_index = 0; seq_pin_index < 8;
+           seq_pin_index = seq_pin_index + 1) begin
+        if (changed[seq_pin_index]) begin
           event_increment = event_increment + 1;
-          if (transition_count[pin_index] != 8'hff)
-            transition_count[pin_index] <=
-                transition_count[pin_index] + 1'b1;
+          if (transition_count[seq_pin_index] != 8'hff)
+            transition_count[seq_pin_index] <=
+                transition_count[seq_pin_index] + 1'b1;
         end
       end
 
