@@ -108,6 +108,22 @@ step, not the overall project.
    exact timing without enumerating complete models. A paired executor now
    recognizes and answers the held-out request at the learned cycle, closing
    the first RTL learn-to-emulate loop.
+7. **Executable protocol program — implemented at the behavioral layer.**
+   Complete stateless and two-state learned models compile into the same
+   validated ten-byte transition format. Binary round trips preserve held-out
+   behavior, overlapping guards are rejected, and unknown requests cannot
+   change state. See `GRAMMAR-000.md`.
+8. **Physical convention search — implemented for sampling edge and bit
+   order.** Markerless traces uniquely determine rising versus falling-edge
+   sampling when data changes on the opposite edge. Bit order remains a
+   two-member equivalence class because consistent bit reversal preserves all
+   observed behavior; the learner retains that uncertainty. See
+   `PHYSICAL-000.md`.
+9. **Pin-role search — implemented with fixed direction and width.** The
+   learner evaluates 48 assignments spanning input roles, output roles,
+   sampling edge, and bit order. Default and permuted fixtures uniquely recover
+   every role and the sampling edge; only the known bit-reversal symmetry
+   remains. See `PHYSICAL-000.md`.
 
 Each step must retain the replay control, an unseen valid exchange, an unknown
 request, and an insufficient-evidence case. A step does not pass merely because

@@ -4,7 +4,7 @@
 > digital peripheral, explains what it knows, and can impersonate the original
 > device.
 
-**Status:** concept only. No implementation decision has been made.
+**Status:** active feasibility prototype. The architecture is not frozen.
 
 This is a prospective entry for Jane Street's
 [Protocol Emulator ASIC Competition](https://blog.janestreet.com/protocol-emulator-asic-competition/).
@@ -101,6 +101,19 @@ Transitions may include:
 The stored representation will probably be closer to a compressed prefix
 graph than a textbook state-machine table. The exact choice must be driven by
 SRAM cost and streaming lookup latency.
+
+## Protocol grammar
+
+The familiar lifecycle—quiet, synchronization, metadata, payload, integrity,
+and termination—is treated as a set of optional semantic roles, not six
+mandatory hardware states. Protocols are expected to be small programs built
+from recurring physical, framing, field, and behavioral operations.
+
+The first evidence-backed behavioral representation is implemented now. A
+guarded transition stores current and next state, a masked request predicate,
+eight response expressions, and exact timing in ten bytes. The learned
+stateless example occupies 10 bytes; the learned two-state example occupies 40
+bytes and runs on the same interpreter. See `docs/GRAMMAR-000.md`.
 
 ## Operating modes
 
@@ -371,4 +384,3 @@ reason to exist:
 
 > Doppelganger watched a device, learned a timed behavioral model, and replaced
 > it successfully—including behavior that was not captured as an exact replay.
-

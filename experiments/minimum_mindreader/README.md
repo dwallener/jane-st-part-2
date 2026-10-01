@@ -17,6 +17,9 @@ Run the demonstration:
 python3 experiments/minimum_mindreader/run_experiment.py
 python3 experiments/minimum_mindreader/run_state_experiment.py
 python3 experiments/minimum_mindreader/run_active_experiment.py
+python3 experiments/minimum_mindreader/run_protocol_program.py
+python3 experiments/minimum_mindreader/run_framing_experiment.py
+python3 experiments/minimum_mindreader/run_role_experiment.py
 ```
 
 Run the tests:
@@ -39,3 +42,18 @@ Experiment 003 begins with sparse evidence that admits 256 response templates.
 It proposes requests that minimize the worst-case surviving candidate set,
 updates from the observed timed response, and stops only when one executable
 model remains. See `docs/ACTIVE-000.md`.
+
+The first behavioral protocol-program experiment compiles both the stateless
+and two-state learned models into the same validated fixed-record format. It
+measures 10 bytes for the stateless program and 40 bytes for the toggle program,
+then verifies serialization and held-out behavior. See `docs/GRAMMAR-000.md`.
+
+The physical convention experiment enumerates rising/falling sampling and
+MSB/LSB-first decoding over markerless traces. It recovers the configured
+sampling edge while retaining bit order as an explicit observational symmetry.
+See `docs/PHYSICAL-000.md`.
+
+The pin-role extension evaluates all 48 assignments of three input roles, two
+output roles, sampling edge, and bit order. It recovers both default and
+permuted wiring from corpus-wide behavioral consistency, again retaining only
+the two equivalent bit-order interpretations.
