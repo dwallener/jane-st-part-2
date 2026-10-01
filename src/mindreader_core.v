@@ -22,10 +22,11 @@ module mindreader_core (
 );
 
   // ui[7] enters a passive status window unless ui[4] explicitly requests a
-  // contradiction. Status uses ui[3:2] and ui[6:5] as a four-bit page address
-  // and suppresses every ordinary control side effect.
+  // contradiction. Status uses ui[1], ui[3:2], and ui[6:5] as a five-bit page
+  // address and suppresses every ordinary control side effect.
   wire status_mode = enable && dedicated_in[7] && !dedicated_in[4];
-  wire [3:0] status_page = {dedicated_in[3:2], dedicated_in[6:5]};
+  wire [4:0] status_page = {dedicated_in[1], dedicated_in[3:2],
+                            dedicated_in[6:5]};
   wire discover_enable = enable && !status_mode && dedicated_in[0];
   wire learn_enable = enable && !status_mode && dedicated_in[1];
   wire promote = enable && !status_mode && dedicated_in[2];
@@ -126,6 +127,57 @@ module mindreader_core (
       .decoded_value(uart_decoded_value)
   );
 
+  wire i2c_ready;
+  wire i2c_candidate_valid;
+  wire i2c_candidate_ambiguous;
+  wire [5:0] i2c_candidate_count;
+  wire [7:0] i2c_clock_mask;
+  wire [7:0] i2c_data_mask;
+  wire [2:0] i2c_clock_pin;
+  wire [2:0] i2c_data_pin;
+  wire [7:0] i2c_first_byte;
+  wire [7:0] i2c_second_byte;
+  wire [1:0] i2c_ack_bits;
+  wire [1:0] i2c_byte_count;
+  wire i2c_open_drain_required;
+
+  i2c_symbol_hypothesis i2c_hypothesis (
+      .clk(clk), .rst_n(rst_n),
+      .observe_enable(discover_enable || learn_enable),
+      .pin_sample(bidir_in), .ready(i2c_ready),
+      .candidate_valid(i2c_candidate_valid),
+      .candidate_ambiguous(i2c_candidate_ambiguous),
+      .candidate_count(i2c_candidate_count),
+      .clock_candidate_mask(i2c_clock_mask),
+      .data_candidate_mask(i2c_data_mask),
+      .clock_pin(i2c_clock_pin), .data_pin(i2c_data_pin),
+      .first_byte(i2c_first_byte), .second_byte(i2c_second_byte),
+      .ack_bits(i2c_ack_bits), .decoded_byte_count(i2c_byte_count),
+      .open_drain_required(i2c_open_drain_required)
+  );
+
+  wire generic_ready;
+  wire [2:0] generic_candidate_classes;
+  wire [7:0] generic_control_mask;
+  wire [7:0] generic_first_events;
+  wire [7:0] generic_latest_events;
+  wire [3:0] generic_burst_count;
+  wire generic_ambiguous;
+  wire generic_insufficient;
+
+  generic_event_framer generic_framer (
+      .clk(clk), .rst_n(rst_n),
+      .observe_enable(discover_enable || learn_enable),
+      .pin_sample(bidir_in), .ready(generic_ready),
+      .candidate_classes(generic_candidate_classes),
+      .control_candidate_mask(generic_control_mask),
+      .first_burst_events(generic_first_events),
+      .latest_burst_events(generic_latest_events),
+      .burst_count(generic_burst_count),
+      .ambiguous(generic_ambiguous),
+      .insufficient(generic_insufficient)
+  );
+
   wire mismatch_now;
   wire contention_drive_allow;
   wire contention_fault;
@@ -197,21 +249,33 @@ module mindreader_core (
   reg [7:0] paged_status;
   always @* begin
     case (status_page)
-      4'h0: paged_status = router_activity_mask;
-      4'h1: paged_status = quiet_age;
-      4'h2: paged_status = structural_status;
-      4'h3: paged_status = clock_candidate_mask;
-      4'h4: paged_status = uart_candidate_count[7:0];
-      4'h5: paged_status = {uart_ready, uart_candidate_valid,
+      5'h00: paged_status = router_activity_mask;
+      5'h01: paged_status = quiet_age;
+      5'h02: paged_status = structural_status;
+      5'h03: paged_status = clock_candidate_mask;
+      5'h04: paged_status = uart_candidate_count[7:0];
+      5'h05: paged_status = {uart_ready, uart_candidate_valid,
                             uart_candidate_ambiguous, uart_pin_valid,
                             uart_idle_level, uart_pin};
-      4'h6: paged_status = uart_period_mask[7:0];
-      4'h7: paged_status = {1'b0, uart_period_mask[14:8]};
-      4'h8: paged_status = {3'b000, uart_width_mask};
-      4'h9: paged_status = {3'b000, uart_parity_mask, uart_stop_mask};
-      4'ha: paged_status = {6'b000000, uart_candidate_count[9:8]};
-      4'hb: paged_status = uart_decoded_value[7:0];
-      4'hc: paged_status = {7'b0000000, uart_decoded_value[8]};
+      5'h06: paged_status = uart_period_mask[7:0];
+      5'h07: paged_status = {1'b0, uart_period_mask[14:8]};
+      5'h08: paged_status = {3'b000, uart_width_mask};
+      5'h09: paged_status = {3'b000, uart_parity_mask, uart_stop_mask};
+      5'h0a: paged_status = {6'b000000, uart_candidate_count[9:8]};
+      5'h0b: paged_status = uart_decoded_value[7:0];
+      5'h0c: paged_status = {7'b0000000, uart_decoded_value[8]};
+      5'h0d: paged_status = {i2c_ready, i2c_candidate_valid,
+                            i2c_candidate_ambiguous,
+                            i2c_candidate_count[4:0]};
+      5'h0e: paged_status = i2c_clock_mask;
+      5'h0f: paged_status = i2c_data_mask;
+      5'h10: paged_status = {generic_ready, generic_ambiguous,
+                             generic_insufficient,
+                             generic_burst_count[1:0],
+                             generic_candidate_classes};
+      5'h11: paged_status = generic_control_mask;
+      5'h12: paged_status = generic_first_events;
+      5'h13: paged_status = generic_latest_events;
       default: paged_status = 8'hff;
     endcase
   end
@@ -223,7 +287,9 @@ module mindreader_core (
       1'b0, evidence_count, supervisor_state, fault_reason,
       transfer_valid, transfer_request, transfer_unknown, data_a_pin,
       data_b_pin, timing_observed, activity_mask, activity_seen,
-      observation_ready, async_candidate_mask, select_candidate_mask
+      observation_ready, async_candidate_mask, select_candidate_mask,
+      i2c_clock_pin, i2c_data_pin, i2c_first_byte, i2c_second_byte,
+      i2c_ack_bits, i2c_byte_count, i2c_open_drain_required
   };
 
 endmodule

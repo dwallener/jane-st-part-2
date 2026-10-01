@@ -21,6 +21,8 @@ project:
     - "passive_bus_profiler.v"
     - "serial_hypothesis_router.v"
     - "uart_symbol_hypothesis_seq.v"
+    - "i2c_symbol_hypothesis.v"
+    - "generic_event_framer.v"
     - "template_learner.v"
     - "mindreader_supervisor.v"
     - "spi_physical_learner.v"

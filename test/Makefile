@@ -6,7 +6,7 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = mindreader_core.v passive_bus_profiler.v serial_hypothesis_router.v uart_symbol_hypothesis_seq.v template_learner.v mindreader_supervisor.v \
+PROJECT_SOURCES = mindreader_core.v passive_bus_profiler.v serial_hypothesis_router.v uart_symbol_hypothesis_seq.v i2c_symbol_hypothesis.v generic_event_framer.v template_learner.v mindreader_supervisor.v \
 	spi_physical_learner.v spi_transaction_decoder.v dual_direction_learner.v \
 	learned_model_promoter.v template_spi_peripheral.v spi_timing_guard.v \
 	pin_contention_monitor.v autonomous_spi_mindreader.v project.v

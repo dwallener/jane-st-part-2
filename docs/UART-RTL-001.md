@@ -24,10 +24,10 @@ one shared evaluator checks the 450 period/width/parity/stop combinations over
 450 clocks. This time-multiplexed search produces the same exhaustive result
 without synthesizing hundreds of parallel framing decoders.
 
-`src/uart_symbol_hypothesis.v` retains the measured parallel implementation as
-an unlisted reference module named `uart_symbol_hypothesis_parallel`.
 `src/uart_symbol_hypothesis_seq.v` is the implementation included in the
-TinyTapeout source manifest.
+TinyTapeout source manifest. The measured parallel prototype was removed after
+establishing the area comparison; its result remains recorded in
+`TT-INTEGRATION-000.md`.
 
 Surviving alternatives are exported as masks and an interpretation count. A
 trace may therefore produce a useful result while remaining ambiguous. The

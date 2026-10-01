@@ -25,7 +25,7 @@ represented by external wires.
 | Electrical | activity, idle baseline, transition counts, edge correlation, direction/open-drain constraints | eight-pin quiet monitor and unknown-subset SPI role inference |
 | Timing | clock edge, period, UART bit time, setup/launch margin | SPI timing admission plus UART periods 2–16 clocks |
 | Symbols | width, order, polarity, parity, stop compatibility | bounded eight-bit SPI plus passive UART width/parity/stop candidates |
-| Frames | select, UART start/stop, I2C start/stop/repeated-start, length/delimiter hypotheses | one selected SPI frame family |
+| Frames | select, UART start/stop, I2C start/stop/repeated-start, length/delimiter hypotheses | selected SPI, online shared-two-wire start/byte/ACK/stop, and generic control/gap/event-count candidates |
 | Fields | constants, masks, copied/inverted bits, counters | mask/template SPI response |
 | Integrity | XOR, additive rules, bounded CRC-8 catalog | experimental learner only |
 | Behavior | guards, delay, state, next state, unknown handling | one bounded learned SPI transition family |
@@ -45,14 +45,36 @@ These are routing hints, not protocol decisions. A selected synchronous trace
 may still leave asynchronous explanations alive. A two-wire trace does not by
 itself prove open-drain electrical behavior. Ambiguity is explicitly reported.
 
+## Inference scheduling rule
+
+The architecture uses silicon parallelism where evidence must be observed at
+the same instant, and reuses logic where hypotheses can be checked between
+events:
+
+- structural scouts run concurrently so no edge is missed;
+- surviving hypotheses are eliminated incrementally as each observation
+  arrives;
+- equivalent survivors remain explicit rather than being forced into a label;
+- deeper arithmetic or framing checks may share a time-multiplexed evaluator;
+  and
+- spare area is preferentially spent on evidence history, provenance, and
+  executable behavior rather than duplicated complete decoders.
+
+This is the intended meaning of "figure it out as we go": the machine updates
+its model while traffic is arriving. A bounded post-capture sweep remains a
+valid implementation tool, but it is not the defining architecture.
+
 ## Benchmark position
 
 - SPI: learned wire emulation, including an unknown four-pin subset of eight.
 - UART: passive symbol decoding on an unknown one-of-eight pin, with idle
   polarity and framing equivalence retained in the integrated top.
-- I2C: unique frame decoding with open-drain execution refusal; not integrated.
+- I2C: online directed clock/data elimination, byte/ACK decoding, and
+  open-drain-required classification integrated passively.
+- Generic framing: online two-edge control enclosure, quiet-gap separation,
+  and equal event-count candidates integrated passively and nonexclusively.
 - Invented corpus: width, framing, integrity, state, corruption, ambiguity, and
   noncausal negative controls.
 
-The next gate is extending the same concurrent, equivalence-preserving boundary
-to shared-two-wire start/stop/ack symbols and then generic framing.
+The next gate is family classification that reports equivalence rather than
+forcing a name, followed by held-out and malformed top-level traces.

@@ -63,11 +63,25 @@ clocks after capture. It synthesizes to 2,895 cells for the UART block and
 space. Yosys reports zero structural problems and no inferred latches. A new
 CMOS5L backend run is still required before making any routed fit claim.
 
-The current local regression passes 116 experiment/component tests, 68
-parameterized subtests, and both TinyTapeout top-level cocotb scenarios. The
+The current local regression passes 118 experiment/component tests, 68
+parameterized subtests, and all four TinyTapeout top-level cocotb scenarios. The
 second top-level scenario identifies a normal-idle 8N1-compatible trace on
 physical pin 3 while proving that neither the SPI-complete bit nor any output
 enable can assert.
+
+The online shared-two-wire bank evaluates directed clock/data assignments on
+every observed sample and synthesizes to 8,555 generic cells, bringing the
+complete design to 19,731 cells. This is intentionally a parallel first
+implementation: it establishes live elimination semantics before consolidating
+state storage. The third top-level scenario uniquely identifies clock pin 2
+and data pin 5 from an acknowledged two-byte write while remaining passive.
+
+The protocol-neutral event framer adds 543 cells locally and raises the full
+design to 20,463 generic cells including the expanded status mux. It retains
+two-edge control enclosure, quiet-gap separation, and repeated event-count
+framing simultaneously. The fourth top-level scenario exposes genuine
+gap/fixed-count ambiguity while remaining passive. Yosys again reports zero
+structural problems and no inferred latches.
 
 The generic count is not a placement result. Fit, routed timing, DRC, precheck,
 and gate-level behavior must be decided by the TinyTapeout CMOS5L backend.

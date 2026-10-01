@@ -45,6 +45,12 @@ synchronous, and shared two-wire hypotheses. See
 UART candidate bank retains pin, polarity, period, width, parity, and stop-bit
 equivalence without driving; see
 [`docs/UART-RTL-001.md`](docs/UART-RTL-001.md).
+The shared-two-wire bank updates directed clock/data candidates on every edge
+and recognizes byte/ACK framing; see
+[`docs/I2C-RTL-001.md`](docs/I2C-RTL-001.md).
+Protocol-neutral framing simultaneously retains two-edge control, quiet-gap,
+and repeated-event-count explanations; see
+[`docs/GENERIC-FRAMING-RTL-001.md`](docs/GENERIC-FRAMING-RTL-001.md).
 
 This is not an attempt to recover human meaning such as "this byte is
 temperature." It is an attempt to learn an executable, timed behavioral model.

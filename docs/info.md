@@ -4,9 +4,13 @@ Protocol Doppelganger is a bounded autonomous protocol learner. In this first
 wire-facing configuration it passively observes eight anonymous pins. It can
 retain UART-like symbol hypotheses on an unknown single pin or find a
 four-wire SPI-like link, infer select and clock roles plus their physical
-conventions, and learn a
-compact request-to-response relation in both possible data directions, and
-retains uncertainty until one direction is uniquely executable.
+conventions, and learn a compact request-to-response relation in both possible
+data directions while retaining uncertainty until one direction is uniquely
+executable.
+
+In parallel, an online shared-two-wire learner eliminates directed clock/data
+assignments as traffic arrives and recognizes start, byte/ACK groups, and stop.
+The UART-like and shared-two-wire paths are passive inference surfaces only.
 
 The learned model does not gain electrical authority automatically. Promotion
 requires resolved direction, stream-causal response expressions, an observed
@@ -53,9 +57,9 @@ Dedicated outputs report:
 | `uo[6]` | contention fault latched |
 | `uo[7]` | latest promotion request rejected |
 
-When `ui[7]=1` and `ui[4]=0`, normal status is replaced by a passive 16-page
-window. The page address is `{ui[3:2], ui[6:5]}`; all command meanings on
-those four pins are suppressed while the window is active. `ui[4]=1` leaves
+When `ui[7]=1` and `ui[4]=0`, normal status is replaced by a passive 32-page
+window. The page address is `{ui[1], ui[3:2], ui[6:5]}`; all command meanings
+on those five pins are suppressed while the window is active. `ui[4]=1` leaves
 status mode and retains its normal activate/contradiction meaning.
 
 | Page | Input byte | Status returned on `uo[7:0]` |
@@ -73,12 +77,21 @@ status mode and retains its normal activate/contradiction meaning.
 | `A` | `C8` | UART-compatible interpretation count, high two bits |
 | `B` | `E8` | decoded value, low eight bits; meaningful only for a unique candidate |
 | `C` | `8C` | decoded value bit eight; meaningful only for a unique candidate |
-| `D`–`F` | — | reserved (`FF`) |
+| `D` | `AC` | shared-two-wire ready, valid, ambiguous, and surviving directed clock/data assignment count |
+| `E` | `CC` | shared-two-wire clock-pin candidate mask |
+| `F` | `EC` | shared-two-wire data-pin candidate mask |
+| `10` | `82` | generic-framer ready, ambiguous, insufficient, burst count, and candidate classes |
+| `11` | `A2` | two-edge control-enclosure candidate mask |
+| `12` | `C2` | event count in the first completed burst |
+| `13` | `E2` | event count in the latest burst |
+| `14`–`1F` | — | reserved (`FF`) |
 
 The structural candidate bits are asynchronous single-wire, selected
 synchronous, and shared two-wire clocked. They are intentionally nonexclusive.
-The UART bank likewise retains all compatible framing interpretations. Neither
-surface authorizes pin drive.
+The UART bank likewise retains all compatible framing interpretations. Generic
+framing bits represent two-edge control enclosure, quiet-gap separation, and
+equal event counts across separated bursts. None of these surfaces authorizes
+pin drive.
 
 ## How to test
 

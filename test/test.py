@@ -56,6 +56,40 @@ def uart_frame(value: int, physical_pin: int, bit_ticks: int = 4) -> tuple[int, 
     return tuple((level << physical_pin) for level in levels for _ in range(bit_ticks))
 
 
+def i2c_write_frame(
+    address: int = 0x50,
+    data: int = 0x2A,
+    clock_pin: int = 2,
+    data_pin: int = 5,
+) -> tuple[int, ...]:
+    sample = (1 << clock_pin) | (1 << data_pin)
+    samples = [sample, sample & ~(1 << data_pin)]
+    sample = samples[-1]
+    for value in (address << 1, data):
+        for bit in range(7, -1, -1):
+            sample &= ~(1 << clock_pin)
+            if (value >> bit) & 1:
+                sample |= 1 << data_pin
+            else:
+                sample &= ~(1 << data_pin)
+            samples.append(sample)
+            sample |= 1 << clock_pin
+            samples.append(sample)
+        sample &= ~(1 << clock_pin)
+        sample &= ~(1 << data_pin)
+        samples.append(sample)
+        sample |= 1 << clock_pin
+        samples.append(sample)
+    sample &= ~(1 << clock_pin)
+    sample &= ~(1 << data_pin)
+    samples.append(sample)
+    sample |= 1 << clock_pin
+    samples.append(sample)
+    sample |= 1 << data_pin
+    samples.append(sample)
+    return tuple(samples)
+
+
 async def tick(dut, cycles: int = 1) -> None:
     await ClockCycles(dut.clk, cycles)
     await Timer(1, unit="ns")
@@ -271,4 +305,86 @@ async def test_uart_symbol_hypothesis_top(dut):
     framing = int(dut.uo_out.value)
     assert framing & (1 << 2)
     assert framing & (1 << 0)
+    assert int(dut.uio_oe.value) == 0
+
+
+@cocotb.test()
+async def test_i2c_symbol_hypothesis_top(dut):
+    clock = Clock(dut.clk, 20, unit="ns")
+    cocotb.start_soon(clock.start())
+
+    clock_pin = 2
+    data_pin = 5
+    samples = i2c_write_frame(clock_pin=clock_pin, data_pin=data_pin)
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = samples[0]
+    dut.rst_n.value = 0
+    await tick(dut, 2)
+    dut.rst_n.value = 1
+    await tick(dut)
+
+    dut.ui_in.value = DISCOVER
+    await drive_samples(dut, samples, hold_cycles=1)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+    assert not (int(dut.uo_out.value) & 0x01), "I2C must not masquerade as SPI"
+    assert int(dut.uio_oe.value) == 0
+
+    dut.ui_in.value = 0xAC
+    await Timer(1, unit="ns")
+    metadata = int(dut.uo_out.value)
+    assert metadata & 0x80
+    assert metadata & 0x40
+    assert not (metadata & 0x20)
+    assert (metadata & 0x1F) == 1
+
+    dut.ui_in.value = 0xCC
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == (1 << clock_pin)
+    dut.ui_in.value = 0xEC
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == (1 << data_pin)
+    assert int(dut.uio_oe.value) == 0
+
+
+@cocotb.test()
+async def test_generic_event_framer_top(dut):
+    clock = Clock(dut.clk, 20, unit="ns")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+    await tick(dut, 2)
+    dut.rst_n.value = 1
+    await tick(dut)
+
+    # Two equal four-transition bursts with a five-clock quiet gap.
+    samples = (0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0)
+    dut.ui_in.value = DISCOVER
+    await drive_samples(dut, samples, hold_cycles=1)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+    assert int(dut.uio_oe.value) == 0
+
+    dut.ui_in.value = 0x82
+    await Timer(1, unit="ns")
+    metadata = int(dut.uo_out.value)
+    assert metadata & 0x80
+    assert metadata & 0x40
+    assert not (metadata & 0x20)
+    assert ((metadata >> 3) & 0x03) == 2
+    assert (metadata & 0x07) == 0b110
+
+    dut.ui_in.value = 0xA2
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0
+    dut.ui_in.value = 0xC2
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 4
+    dut.ui_in.value = 0xE2
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 4
     assert int(dut.uio_oe.value) == 0

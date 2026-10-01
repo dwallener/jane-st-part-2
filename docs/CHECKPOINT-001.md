@@ -35,11 +35,14 @@ constraints are known and ownership is explicitly granted.
   window to nonexclusive asynchronous-single-wire, selected-synchronous, and
   shared-two-wire candidate routes. Canonical SPI, UART, and I2C traces plus a
   quiet negative control reach their expected structural routes.
-- [ ] **F2 Concurrent symbol hypotheses.** Feed routed evidence into bounded
+- [x] **F2 Concurrent symbol hypotheses.** Feed routed evidence into bounded
   SPI, UART, I2C, and generic-framing symbol/frame candidates. The first
   wire-facing UART bank is integrated: it concurrently retains compatible
   pin, idle polarity, bit-period, width, parity, and stop-count hypotheses.
-  I2C and generic framing remain.
+  An online shared-two-wire bank now eliminates directed clock/data candidates
+  on every observation and recognizes start, byte/ACK groups, and stop. A
+  protocol-neutral event framer concurrently retains control-enclosure,
+  quiet-gap, and repeated-event-count boundaries.
 - [ ] **F3 Family classification.** Report surviving families and genuine
   equivalence rather than forcing a single label.
 - [ ] **F4 End-to-end held-out tests.** Exercise each integrated family through
@@ -71,8 +74,9 @@ constraints are known and ownership is explicitly granted.
 The integrated ASIC top performs autonomous behavioral learning for a bounded
 four-wire SPI-like family appearing on an unknown subset of the eight pins. A
 passive UART-like bank now observes an unknown single pin and reports every
-compatible bounded symbol interpretation, but it does not yet learn behavior
-or transmit. I2C remains outside the eight-pin wire-facing top. The abstract
-active-probe kernel exists only in the broader repository evidence. This
+compatible bounded symbol interpretation. A passive shared-two-wire bank
+incrementally identifies clock/data roles and byte/ACK framing. Neither bank
+yet learns behavior or transmits. The abstract active-probe kernel exists only
+in the broader repository evidence. This
 checkpoint closes only when the integrated top, tests, and documentation agree
 on that boundary.
