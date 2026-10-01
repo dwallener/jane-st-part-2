@@ -63,8 +63,8 @@ clocks after capture. It synthesizes to 2,895 cells for the UART block and
 space. Yosys reports zero structural problems and no inferred latches. A new
 CMOS5L backend run is still required before making any routed fit claim.
 
-The current local regression passes 118 experiment/component tests, 68
-parameterized subtests, and all four TinyTapeout top-level cocotb scenarios. The
+The current local regression passes 119 experiment/component tests, 68
+parameterized subtests, and all five TinyTapeout top-level cocotb scenarios. The
 second top-level scenario identifies a normal-idle 8N1-compatible trace on
 physical pin 3 while proving that neither the SPI-complete bit nor any output
 enable can assert.
@@ -82,6 +82,18 @@ two-edge control enclosure, quiet-gap separation, and repeated event-count
 framing simultaneously. The fourth top-level scenario exposes genuine
 gap/fixed-count ambiguity while remaining passive. Yosys again reports zero
 structural problems and no inferred latches.
+
+The merged equivalence classifier itself is 32 generic cells; the classifier
+plus two additional status pages raise the complete design to 20,552 cells.
+It reports six structural interpretations and distinct ready, unique,
+equivalent, and insufficient outcomes. The fourth top-level scenario waits for
+all inference surfaces and observes exactly the two intended generic survivors.
+
+The fifth top-level scenario is a refusal matrix. Silence reports
+insufficiency; an incomplete selected frame never resolves; a UART-like trace
+with a second active pin refuses pin identity; a shared-two-wire trace without
+STOP yields no candidate; and unequal bursts eliminate only the fixed-count
+interpretation. All five cases require `uio_oe == 0` throughout.
 
 The generic count is not a placement result. Fit, routed timing, DRC, precheck,
 and gate-level behavior must be decided by the TinyTapeout CMOS5L backend.

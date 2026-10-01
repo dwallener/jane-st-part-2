@@ -178,6 +178,30 @@ module mindreader_core (
       .insufficient(generic_insufficient)
   );
 
+  wire equivalence_ready;
+  wire [5:0] interpretation_mask;
+  wire [3:0] interpretation_count;
+  wire interpretation_unique;
+  wire interpretation_equivalent;
+  wire interpretation_insufficient;
+
+  protocol_equivalence_classifier equivalence_classifier (
+      .router_ready(router_ready),
+      .structural_classes(candidate_classes),
+      .selected_sync_valid(physical_complete),
+      .uart_ready(uart_ready), .uart_valid(uart_candidate_valid),
+      .shared_two_wire_ready(i2c_ready),
+      .shared_two_wire_valid(i2c_candidate_valid),
+      .generic_ready(generic_ready),
+      .generic_classes(generic_candidate_classes),
+      .ready(equivalence_ready),
+      .interpretation_mask(interpretation_mask),
+      .interpretation_count(interpretation_count),
+      .unique_result(interpretation_unique),
+      .equivalent_result(interpretation_equivalent),
+      .insufficient_result(interpretation_insufficient)
+  );
+
   wire mismatch_now;
   wire contention_drive_allow;
   wire contention_fault;
@@ -276,6 +300,12 @@ module mindreader_core (
       5'h11: paged_status = generic_control_mask;
       5'h12: paged_status = generic_first_events;
       5'h13: paged_status = generic_latest_events;
+      5'h14: paged_status = {2'b00, interpretation_mask};
+      5'h15: paged_status = {equivalence_ready,
+                             interpretation_equivalent,
+                             interpretation_unique,
+                             interpretation_insufficient,
+                             interpretation_count};
       default: paged_status = 8'hff;
     endcase
   end

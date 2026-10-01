@@ -43,10 +43,15 @@ constraints are known and ownership is explicitly granted.
   on every observation and recognizes start, byte/ACK groups, and stop. A
   protocol-neutral event framer concurrently retains control-enclosure,
   quiet-gap, and repeated-event-count boundaries.
-- [ ] **F3 Family classification.** Report surviving families and genuine
-  equivalence rather than forcing a single label.
-- [ ] **F4 End-to-end held-out tests.** Exercise each integrated family through
-  the TinyTapeout top with negative controls and malformed traffic.
+- [x] **F3 Family classification.** Merge every ready inference surface into a
+  six-bit interpretation mask and independently report unique, equivalent, or
+  insufficient. The result uses structural meanings rather than protocol
+  brand names.
+- [x] **F4 End-to-end held-out tests.** The TinyTapeout top exercises learned
+  selected-synchronous execution, UART-like and shared-two-wire discovery,
+  generic ambiguity, silence, incomplete selected traffic, multi-pin UART
+  contamination, missing two-wire STOP, and unequal event bursts. Every
+  passive refusal case requires all output enables low.
 
 ## G. Propose before driving
 

@@ -84,7 +84,9 @@ status mode and retains its normal activate/contradiction meaning.
 | `11` | `A2` | two-edge control-enclosure candidate mask |
 | `12` | `C2` | event count in the first completed burst |
 | `13` | `E2` | event count in the latest burst |
-| `14`–`1F` | — | reserved (`FF`) |
+| `14` | `86` | merged interpretation mask: UART-like, selected synchronous, shared two-wire, control, gap, fixed-count |
+| `15` | `A6` | merged ready, equivalent, unique, insufficient, and interpretation count |
+| `16`–`1F` | — | reserved (`FF`) |
 
 The structural candidate bits are asynchronous single-wire, selected
 synchronous, and shared two-wire clocked. They are intentionally nonexclusive.

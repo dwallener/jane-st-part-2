@@ -388,3 +388,115 @@ async def test_generic_event_framer_top(dut):
     await Timer(1, unit="ns")
     assert int(dut.uo_out.value) == 4
     assert int(dut.uio_oe.value) == 0
+
+    # The UART evaluator finishes later than the online engines. Once every
+    # inference surface is ready, the merged report must retain both generic
+    # explanations rather than manufacture a protocol name.
+    for _ in range(500):
+        dut.ui_in.value = 0xA6
+        await tick(dut)
+        if int(dut.uo_out.value) & 0x80:
+            break
+    else:
+        assert False, "equivalence classifier did not become ready"
+    equivalence = int(dut.uo_out.value)
+    assert equivalence & 0x40
+    assert not (equivalence & 0x20)
+    assert not (equivalence & 0x10)
+    assert (equivalence & 0x0F) == 2
+
+    dut.ui_in.value = 0x86
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0b110000
+    assert int(dut.uio_oe.value) == 0
+
+
+@cocotb.test()
+async def test_passive_refusal_controls_top(dut):
+    clock = Clock(dut.clk, 20, unit="ns")
+    cocotb.start_soon(clock.start())
+
+    async def reset_with(initial_sample: int) -> None:
+        dut.ena.value = 1
+        dut.ui_in.value = 0
+        dut.uio_in.value = initial_sample
+        dut.rst_n.value = 0
+        await tick(dut, 2)
+        dut.rst_n.value = 1
+        await tick(dut)
+
+    # Silence completes every passive observation surface but supports no
+    # interpretation. That is insufficiency, never permission to drive.
+    await reset_with(0)
+    dut.ui_in.value = DISCOVER
+    await tick(dut, 20)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+    dut.ui_in.value = 0xA6
+    await Timer(1, unit="ns")
+    report = int(dut.uo_out.value)
+    assert report & 0x80
+    assert report & 0x10
+    assert (report & 0x0F) == 0
+    dut.ui_in.value = 0x86
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0
+    assert int(dut.uio_oe.value) == 0
+
+    # A selected-synchronous fragment without its closing select edge cannot
+    # complete physical inference.
+    fragment = spi_mode1_frame(0xA5, 0x62)[:8]
+    await reset_with(fragment[0])
+    dut.ui_in.value = DISCOVER
+    await drive_samples(dut, fragment, hold_cycles=1)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+    assert not (int(dut.uo_out.value) & 0x01)
+    assert int(dut.uio_oe.value) == 0
+
+    # UART-like timing contaminated by a second active pin refuses pin identity.
+    uart_samples = list(uart_frame(0x55, 3))
+    for index in range(len(uart_samples) // 2, len(uart_samples)):
+        uart_samples[index] |= (index & 1) << 5
+    await reset_with(uart_samples[0])
+    dut.ui_in.value = DISCOVER
+    await drive_samples(dut, tuple(uart_samples), hold_cycles=1)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+    dut.ui_in.value = 0xA4
+    await Timer(1, unit="ns")
+    uart_metadata = int(dut.uo_out.value)
+    assert uart_metadata & 0x80
+    assert not (uart_metadata & 0x40)
+    assert not (uart_metadata & 0x10)
+    assert int(dut.uio_oe.value) == 0
+
+    # A coherent two-wire transfer without STOP is not a valid framed result.
+    truncated_i2c = i2c_write_frame()[:-1]
+    await reset_with(truncated_i2c[0])
+    dut.ui_in.value = DISCOVER
+    await drive_samples(dut, truncated_i2c, hold_cycles=1)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+    dut.ui_in.value = 0xAC
+    await Timer(1, unit="ns")
+    i2c_metadata = int(dut.uo_out.value)
+    assert i2c_metadata & 0x80
+    assert not (i2c_metadata & 0x40)
+    assert (i2c_metadata & 0x1F) == 0
+    assert int(dut.uio_oe.value) == 0
+
+    # Unequal quiet-gap-separated bursts retain gap framing but eliminate the
+    # equal-event-count explanation.
+    unequal = (0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0)
+    await reset_with(0)
+    dut.ui_in.value = DISCOVER
+    await drive_samples(dut, unequal, hold_cycles=1)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+    dut.ui_in.value = 0x82
+    await Timer(1, unit="ns")
+    generic_metadata = int(dut.uo_out.value)
+    assert generic_metadata & 0x02
+    assert not (generic_metadata & 0x04)
+    assert int(dut.uio_oe.value) == 0

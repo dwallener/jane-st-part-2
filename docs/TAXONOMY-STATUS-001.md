@@ -76,5 +76,7 @@ valid implementation tool, but it is not the defining architecture.
 - Invented corpus: width, framing, integrity, state, corruption, ambiguity, and
   noncausal negative controls.
 
-The next gate is family classification that reports equivalence rather than
-forcing a name, followed by held-out and malformed top-level traces.
+The integrated equivalence classifier now merges UART-like asynchronous,
+selected-synchronous, shared-two-wire, control-enclosed, gap-framed, and
+fixed-event-count survivors without forcing a name. The next gate is held-out
+and malformed top-level traces.

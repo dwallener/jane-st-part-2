@@ -51,6 +51,10 @@ and recognizes byte/ACK framing; see
 Protocol-neutral framing simultaneously retains two-edge control, quiet-gap,
 and repeated-event-count explanations; see
 [`docs/GENERIC-FRAMING-RTL-001.md`](docs/GENERIC-FRAMING-RTL-001.md).
+An equivalence classifier merges all ready inference surfaces into structural
+survivors and reports unique, equivalent, or insufficient without choosing a
+protocol brand; see
+[`docs/EQUIVALENCE-RTL-001.md`](docs/EQUIVALENCE-RTL-001.md).
 
 This is not an attempt to recover human meaning such as "this byte is
 temperature." It is an attempt to learn an executable, timed behavioral model.
