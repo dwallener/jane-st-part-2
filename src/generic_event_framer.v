@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Protocol-neutral online framing evidence over raw pin transitions. Candidate
 // classes are nonexclusive: a trace may be enclosed by a two-edge control pin,
 // divided by quiet gaps, and contain equal-sized event bursts simultaneously.
@@ -41,8 +39,8 @@ module generic_event_framer #(
   reg [7:0] changed;
   integer comb_pin_index;
   integer seq_pin_index;
-  integer event_increment;
-  integer class_count;
+  reg [7:0] event_increment;
+  reg [1:0] class_count;
 
   assign ambiguous = ready && (class_count > 1);
   assign insufficient = ready && (candidate_classes == 0);
@@ -60,15 +58,16 @@ module generic_event_framer #(
     first_burst_events = completed_first_events;
     latest_burst_events = current_burst_events;
     burst_count = completed_bursts +
-                  ((current_burst_events != 0) ? 1'b1 : 1'b0);
+                  ((current_burst_events != 0) ? 4'd1 : 4'd0);
     candidate_classes = 0;
     candidate_classes[0] = |control_candidate_mask;
     candidate_classes[1] = gap_seen;
     candidate_classes[2] = gap_seen && fixed_still_possible &&
                            (completed_first_events == current_burst_events) &&
                            (current_burst_events != 0);
-    class_count = candidate_classes[0] + candidate_classes[1] +
-                  candidate_classes[2];
+    class_count = {1'b0, candidate_classes[0]} +
+                  {1'b0, candidate_classes[1]} +
+                  {1'b0, candidate_classes[2]};
   end
 
   always @(posedge clk) begin
@@ -107,11 +106,11 @@ module generic_event_framer #(
     end else if (observe_enable && running) begin
       changed = previous_sample ^ pin_sample;
       previous_sample <= pin_sample;
-      event_increment = 0;
+      event_increment = 8'd0;
       for (seq_pin_index = 0; seq_pin_index < 8;
            seq_pin_index = seq_pin_index + 1) begin
         if (changed[seq_pin_index]) begin
-          event_increment = event_increment + 1;
+          event_increment = event_increment + 8'd1;
           if (transition_count[seq_pin_index] != 8'hff)
             transition_count[seq_pin_index] <=
                 transition_count[seq_pin_index] + 1'b1;

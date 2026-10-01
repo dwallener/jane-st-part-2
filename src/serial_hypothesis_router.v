@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Family-neutral routing hints from one bounded eight-pin observation window.
 // Candidate classes are deliberately nonexclusive and never grant pin drive.
 module serial_hypothesis_router #(
@@ -34,7 +32,7 @@ module serial_hypothesis_router #(
   integer comb_pin_index;
   integer seq_pin_index;
   integer active_count;
-  integer class_count;
+  reg [1:0] class_count;
 
   assign insufficient = ready && (candidate_classes == 3'b000);
   assign ambiguous = ready && (class_count > 1);
@@ -65,8 +63,9 @@ module serial_hypothesis_router #(
     candidate_classes[2] = (active_count == 2) &&
                            (|clock_candidate_mask);
 
-    class_count = candidate_classes[0] + candidate_classes[1] +
-                  candidate_classes[2];
+    class_count = {1'b0, candidate_classes[0]} +
+                  {1'b0, candidate_classes[1]} +
+                  {1'b0, candidate_classes[2]};
   end
 
   always @(posedge clk) begin

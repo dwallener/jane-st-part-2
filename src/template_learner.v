@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Streaming learner for one bounded request/response context.
 //
 // Candidate packing for each 18-bit response slice:
@@ -118,4 +116,3 @@ module template_learner (
 endmodule
 
 `default_nettype wire
-

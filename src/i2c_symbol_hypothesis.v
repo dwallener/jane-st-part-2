@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Online, passive shared-two-wire hypothesis elimination. All directed
 // clock/data assignments are initially possible; each observed edge updates or
 // removes candidates. The block recognizes start, rising-edge data symbols,
@@ -75,8 +73,8 @@ module i2c_symbol_hypothesis (
         candidate_count = candidate_count + 1'b1;
         clock_candidate_mask[count_index >> 3] = 1'b1;
         data_candidate_mask[count_index & 7] = 1'b1;
-        clock_pin = count_index >> 3;
-        data_pin = count_index & 7;
+        clock_pin = count_index[5:3];
+        data_pin = count_index[2:0];
         first_byte = candidate_first[count_index];
         second_byte = candidate_second[count_index];
         ack_bits = candidate_ack[count_index];

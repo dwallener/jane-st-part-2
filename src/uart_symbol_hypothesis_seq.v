@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Bounded passive UART-like symbol inference on an unknown one-of-eight pin.
 // Capture maintains period hypotheses concurrently. After capture, one shared
 // evaluator scans the 450 period/width/parity/stop combinations in 450 clocks.
@@ -54,8 +52,8 @@ module uart_symbol_hypothesis (
 
   integer eval_data_index;
   integer eval_stop_index;
-  integer eval_total_symbols;
-  integer eval_parity_position;
+  reg [4:0] eval_total_symbols;
+  reg [3:0] eval_parity_position;
   reg current_valid;
   reg current_parity_xor;
   reg [8:0] current_value;
@@ -76,8 +74,9 @@ module uart_symbol_hypothesis (
     current_value = 0;
 
     if (evaluating) begin
-      eval_total_symbols = 1 + eval_width +
-                           ((eval_parity == 0) ? 0 : 1) + eval_stops;
+      eval_total_symbols = 5'd1 + {1'b0, eval_width} +
+                           ((eval_parity == 0) ? 5'd0 : 5'd1) +
+                           {3'b000, eval_stops};
       current_valid = live_period_mask[eval_period - 2] &&
                       (symbol_count[eval_period] >= eval_total_symbols) &&
                       (sampled_symbols[eval_period][0] != idle_level);
@@ -92,7 +91,7 @@ module uart_symbol_hypothesis (
         end
       end
 
-      eval_parity_position = 1 + eval_width;
+      eval_parity_position = 4'd1 + eval_width;
       if (eval_parity == 1)
         current_valid = current_valid &&
             (sampled_symbols[eval_period][eval_parity_position] ==
@@ -107,7 +106,8 @@ module uart_symbol_hypothesis (
         if (eval_stop_index < eval_stops)
           current_valid = current_valid &&
               (sampled_symbols[eval_period][eval_parity_position +
-               ((eval_parity == 0) ? 0 : 1) + eval_stop_index] == idle_level);
+               ((eval_parity == 0) ? 4'd0 : 4'd1) +
+               {3'b000, eval_stop_index[0]}] == idle_level);
       end
     end
   end
@@ -176,7 +176,7 @@ module uart_symbol_hypothesis (
       if (!started && (change_count != 0)) begin
         if (change_count == 1) begin
           started <= 1'b1;
-          uart_pin <= changed_pin;
+          uart_pin <= changed_pin[2:0];
           idle_level <= previous_sample[changed_pin];
         end else begin
           multiple_active <= 1'b1;
@@ -184,23 +184,24 @@ module uart_symbol_hypothesis (
       end else if (started) begin
         for (seq_pin_index = 0; seq_pin_index < 8;
              seq_pin_index = seq_pin_index + 1)
-          if ((seq_pin_index != uart_pin) && changed[seq_pin_index])
+          if ((seq_pin_index[2:0] != uart_pin) && changed[seq_pin_index])
             multiple_active <= 1'b1;
 
         for (seq_period = 2; seq_period <= 16;
              seq_period = seq_period + 1) begin
           if (live_period_mask[seq_period - 2]) begin
             if (changed[uart_pin] &&
-                (phase[seq_period] != seq_period - 1))
+                (phase[seq_period] != (seq_period[4:0] - 5'd1)))
               live_period_mask[seq_period - 2] <= 1'b0;
-            if ((phase[seq_period] == ((seq_period / 2) - 1)) &&
+            if ((phase[seq_period] ==
+                 ((seq_period[4:0] >> 1) - 5'd1)) &&
                 (symbol_count[seq_period] < 16)) begin
-              sampled_symbols[seq_period][symbol_count[seq_period]] <=
+              sampled_symbols[seq_period][symbol_count[seq_period][3:0]] <=
                   pin_sample[uart_pin];
               symbol_count[seq_period] <=
                   symbol_count[seq_period] + 1'b1;
             end
-            if (phase[seq_period] == seq_period - 1)
+            if (phase[seq_period] == (seq_period[4:0] - 5'd1))
               phase[seq_period] <= 0;
             else
               phase[seq_period] <= phase[seq_period] + 1'b1;

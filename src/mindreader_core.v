@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // TinyTapeout-facing integration of the bounded autonomous protocol mindreader.
 // Passive structural and UART-like candidates coexist with the executable SPI
 // learner. The core remains passive until a learned SPI model passes timing,

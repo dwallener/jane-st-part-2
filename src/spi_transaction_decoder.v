@@ -1,7 +1,5 @@
 /* Copyright (c) 2026 Damir Wallener; SPDX-License-Identifier: Apache-2.0 */
 `default_nettype none
-`timescale 1ns / 1ps
-
 module spi_transaction_decoder (
     input wire clk, input wire rst_n, input wire enable,
     input wire [7:0] pin_sample,

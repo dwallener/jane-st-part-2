@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Always-passive evidence collector for an anonymous eight-pin connection.
 // It deliberately has no output-data or output-enable ports.
 module passive_bus_profiler #(

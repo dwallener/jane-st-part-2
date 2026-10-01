@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Passive bounded inference for one four-wire, eight-bit SPI frame appearing
 // on an unknown subset of eight observed pins. Both data wires must transition
 // at least once; otherwise their identity is honestly left unresolved.
@@ -56,8 +54,8 @@ module spi_physical_learner (
     for (scan_index = 0; scan_index < 64; scan_index = scan_index + 1) begin
       if (candidate_mask[scan_index]) begin
         candidate_count = candidate_count + 1'b1;
-        select_pin = scan_index >> 3;
-        clock_pin = scan_index & 7;
+        select_pin = scan_index[5:3];
+        clock_pin = scan_index[2:0];
         sample_trailing = leading_data_dirty[scan_index];
       end
     end
@@ -69,13 +67,14 @@ module spi_physical_learner (
     data_candidate_mask = 0;
     data_candidate_count = 0;
     for (scan_index = 0; scan_index < 8; scan_index = scan_index + 1) begin
-      if ((scan_index != select_pin) && (scan_index != clock_pin) &&
+      if ((scan_index[2:0] != select_pin) &&
+          (scan_index[2:0] != clock_pin) &&
           (transition_count[scan_index] != 0)) begin
         data_candidate_mask[scan_index] = 1'b1;
         if (data_candidate_count == 0)
-          data_a_pin = scan_index;
+          data_a_pin = scan_index[2:0];
         else if (data_candidate_count == 1)
-          data_b_pin = scan_index;
+          data_b_pin = scan_index[2:0];
         data_candidate_count = data_candidate_count + 1'b1;
       end
     end

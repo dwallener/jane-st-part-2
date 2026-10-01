@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Bounded loss-detecting anonymous-pin edge recorder.
 module edge_trace_capture #(
     parameter PIN_WIDTH = 4,

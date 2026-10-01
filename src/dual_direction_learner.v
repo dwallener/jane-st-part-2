@@ -1,7 +1,5 @@
 /* Copyright (c) 2026 Damir Wallener; SPDX-License-Identifier: Apache-2.0 */
 `default_nettype none
-`timescale 1ns / 1ps
-
 module dual_direction_learner (
     input wire clk, input wire rst_n, input wire observe,
     input wire [7:0] data_a_word, input wire [7:0] data_b_word,

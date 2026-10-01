@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Executes one resolved template_learner model.
 //
 // Requests are accepted only while request_ready is high. A request outside

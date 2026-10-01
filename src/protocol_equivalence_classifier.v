@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Merge independent inference surfaces without forcing a protocol brand name.
 // Every set bit is an executable or structural interpretation still supported
 // by the observation. Multiple bits are a first-class equivalence result.

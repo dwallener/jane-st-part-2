@@ -1,7 +1,5 @@
 /* Copyright (c) 2026 Damir Wallener; SPDX-License-Identifier: Apache-2.0 */
 `default_nettype none
-`timescale 1ns / 1ps
-
 module template_spi_peripheral (
     input wire clk, input wire rst_n, input wire drive_enable,
     input wire [7:0] pin_in,
@@ -18,9 +16,10 @@ module template_spi_peripheral (
   reg [7:0] previous_pins;
   reg previous_selected;
   reg [2:0] bit_count;
+  reg [2:0] current_bit;
   reg [7:0] request_shift, request_live;
   reg response_value;
-  integer current_bit, expression_index, selected_code;
+  integer expression_index, selected_code;
   wire selected = pin_in[select_pin] == select_active_level;
   wire leading = previous_pins[clock_pin] == clock_idle_level &&
                  pin_in[clock_pin] != clock_idle_level;
@@ -29,7 +28,7 @@ module template_spi_peripheral (
   wire sample_now = selected && (sample_trailing ? trailing : leading);
 
   always @* begin
-    current_bit = 7 - bit_count;
+    current_bit = 3'd7 - bit_count;
     request_live = request_shift;
     request_live[current_bit] = pin_in[request_pin];
     selected_code = 0;

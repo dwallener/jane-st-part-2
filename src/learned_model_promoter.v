@@ -1,7 +1,5 @@
 /* Copyright (c) 2026 Damir Wallener; SPDX-License-Identifier: Apache-2.0 */
 `default_nettype none
-`timescale 1ns / 1ps
-
 module learned_model_promoter (
     input wire clk, input wire rst_n, input wire promote, input wire invalidate,
     input wire direction_resolved, input wire timing_safe,

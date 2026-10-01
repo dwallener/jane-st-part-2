@@ -1,7 +1,5 @@
 /* Copyright (c) 2026 Damir Wallener; SPDX-License-Identifier: Apache-2.0 */
 `default_nettype none
-`timescale 1ns / 1ps
-
 module autonomous_spi_mindreader (
     input wire clk, input wire rst_n,
     input wire discover_enable, input wire learn_enable,

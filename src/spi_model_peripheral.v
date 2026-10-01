@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Wire-facing executor for stream-causal, eight-bit SPI models.
 //
 // Four anonymous pins are remapped by the loaded model.  The external SPI

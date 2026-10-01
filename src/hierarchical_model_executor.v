@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Loads and executes the first 22-byte DP hierarchical model format.
 // The model is written bytewise, then atomically admitted by load_commit.
 module hierarchical_model_executor (

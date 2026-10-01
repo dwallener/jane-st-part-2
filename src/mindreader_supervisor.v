@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
-
 // Fail-safe authority boundary between passive observation and pin driving.
 module mindreader_supervisor (
     input  wire       clk,
