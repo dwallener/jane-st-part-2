@@ -1,10 +1,10 @@
 import json
 
 from known_protocol_corpus import benchmark_cases
-from waveform_adapter import score_current_frontend
+from waveform_adapter import score_benchmark_case
 
 
-scores = tuple(score_current_frontend(case) for case in benchmark_cases())
+scores = tuple(score_benchmark_case(case) for case in benchmark_cases())
 print(
     json.dumps(
         {
@@ -23,10 +23,8 @@ print(
                             if score.family == family
                         }
                     ),
-                    "frontend_gap": next(
-                        score.layers[-1].reason
-                        for score in scores
-                        if score.family == family
+                    "last_result": next(
+                        score.layers[-1].reason for score in scores if score.family == family
                     ),
                 }
                 for family in sorted({score.family for score in scores})

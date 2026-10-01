@@ -145,6 +145,83 @@ step, not the overall project.
     profile. All 13 cases then fail the current selected-serial frontend for
     documented topology reasons, establishing an honest baseline rather than
     retrofitting the benchmark. See `CORPUS-000.md`.
+15. **Canonical SPI frontend — implemented.** A 384-hypothesis anonymous-pin
+    search advances every SPI mode/order fixture through topology and symbol
+    extraction. Physical timing is unique; data direction and bit order remain
+    explicit two-way symmetries. See `SPI-000.md`.
+16. **Joint SPI behavior — implemented.** Eight transfers sharing unknown
+    physical conventions resolve data direction when the response relation is
+    lossy, retain it when the relation is reversible, generalize to an unseen
+    transfer, and compile to a 10-byte program. See `SPI-001.md`.
+17. **Hierarchical learned artifact — implemented.** Resolved SPI topology,
+    one canonical behavioral program, bit-reversal equivalence, and compact
+    provenance serialize to 22 bytes and round-trip without changing held-out
+    wire behavior. Unresolved causal direction is rejected. See `MODEL-000.md`.
+18. **Model provenance — implemented as an optional sidecar.** Evidence
+    fingerprints and support masks distinguish supported claims, harmless
+    equivalence, and unresolved causal direction. Reversible SPI requests drive
+    ownership evidence instead of a meaningless value probe. See
+    `PROVENANCE-000.md`.
+19. **Serialized-model RTL execution — implemented at the word boundary.**
+    Synthesizable RTL atomically validates the exact 22-byte hierarchical
+    artifact, exposes its learned physical fields, executes its packed
+    transition on a held-out request, and rejects both malformed models and
+    out-of-family traffic. The boundary also makes pin-level response causality
+    an explicit next hypothesis rather than an accidental assumption. See
+    `RTL-MODEL-000.md`.
+20. **SPI response causality — implemented for the expression language.**
+    Each response dependency is placed on the wire-time axis and classified as
+    precomputable, prefix-causal, same-symbol causal, or noncausal. The learned
+    corpus is same-symbol causal across all modes and fixture orders, exposing
+    a launch-to-sample timing measurement as the next required evidence. See
+    `CAUSALITY-000.md`.
+21. **Wire-facing SPI impersonation — implemented for stream-causal models.**
+    RTL loads the learned artifact, remaps anonymous physical roles, follows the
+    inferred clock convention, and emits a held-out response bit by bit. It
+    releases the response pin on deselect and refuses to drive a well-formed
+    but noncausal program. See `SPI-RTL-000.md`.
+22. **Passive authority and trace capture — implemented.** A fail-safe
+    supervisor separates observation, candidacy, admission, emulation, and
+    fault, with combinational drive revocation. A bounded anonymous-edge FIFO
+    makes trace loss sticky and invalidates incomplete evidence. See
+    `SUPERVISOR-000.md`.
+23. **Passive SPI physical inference in RTL — implemented.** Hardware evaluates
+    all ordered select/clock assignments from anonymous pin transitions and
+    recovers roles, polarity, idle level, and sampling edge across all modes,
+    orders, and a permuted fixture. Data direction remains explicitly
+    unresolved. See `SPI-RTL-LEARN-000.md`.
+24. **Autonomous SPI learn-to-impersonate loop — implemented.** Inferred
+    topology decodes wire traffic into two competing causal directions; only a
+    unique, causal, timing-safe, ownership-authorized model can be frozen. The
+    resulting RTL answers an unseen wire request without host-generated model
+    bytes and remains high-impedance throughout learning. See
+    `AUTONOMOUS-000.md`.
+25. **Request-guard causality — implemented.** Guard bits and response bits are
+    placed on the same wire-time axis. The MSB corpus has a constant speculative
+    prefix; canonical LSB models expose input-dependent output before their
+    request family is known. See `GUARD-000.md`.
+26. **SPI boundary safety — implemented.** Exact-length acceptance rejects
+    truncated and overlong frames, measured edge intervals gate timing safety,
+    and pad-loopback disagreement removes drive permission immediately and
+    latches contention. See `SPI-SAFETY-000.md`.
+27. **Mindreader control kernels — implemented.** Hardware proposes a
+    distinguishing request but transmits only after authorization, executes a
+    bounded multi-state program without unknown-request state mutation, and
+    exposes evidence, survivors, uncertainty, admission, and fault status. See
+    `MINDREADER-CONTROL-000.md`.
+28. **UART and I²C frontends — implemented at the inference boundary.**
+    Anonymous UART traces retain polarity, period, width, parity, and stop-bit
+    equivalence while rejecting a malformed canonical frame. Anonymous I²C
+    traces recover clock/data roles, bytes, ACK ownership, and repeated-start
+    frame boundaries while recording the open-drain execution constraint. See
+    `SERIAL-FRONTENDS-000.md`.
+29. **Adversarial corpus and honest benchmark — implemented.** Six invented
+    protocols exercise variable width, competing framing rules, integrity,
+    state, ambiguity, corruption, and noncausal behavior. A generated 19-case
+    report records how far each known and invented case progresses, the
+    evidence and equivalence remaining, held-out behavior, replay failure,
+    refusal, and unsupported claims. See `ADVERSARIAL-000.md` and
+    `BENCHMARK-000.md`.
 
 Each step must retain the replay control, an unseen valid exchange, an unknown
 request, and an insufficient-evidence case. A step does not pass merely because

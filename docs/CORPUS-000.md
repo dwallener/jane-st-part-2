@@ -55,17 +55,15 @@ that has quietly specialized itself to the synthetic selected serial link.
 
 ## What passes today
 
-All 13 fixtures round-trip through independent reference decoders. No claim is
-yet made that the inference pipeline recognizes them. The current physical
-learner assumes separate request/response data and explicit response-valid, so
-UART and I²C are expected to fail. Those failures are useful architecture
-evidence, not regressions to hide.
+All 13 fixtures round-trip through independent reference decoders and lossless
+anonymous delta-edge capture. Each family now reaches its bounded inference
+frontend; this is deliberately weaker than claiming full protocol emulation.
 
 The waveform adapter now converts every case into a lossless anonymous
 delta-edge trace, including otherwise easy-to-lose trailing idle time. All 13
 cases pass capture and per-pin activity profiling.
 
-The honest current failure matrix stops every case at `activity_profile`:
+The original honest failure matrix stopped every case at `activity_profile`:
 
 | Family | Current frontend mismatch |
 | --- | --- |
@@ -73,8 +71,23 @@ The honest current failure matrix stops every case at `activity_profile`:
 | UART | Requires external clock and select pins; UART recovers timing from one asynchronous line. |
 | I²C | Requires separate request and response pins; I²C uses shared bidirectional open-drain data and in-band ACK. |
 
-This exposes a real overfit: the component learners are broader than replay,
-but the synthetic-link frontend connecting them is highly specific.
+That baseline exposed a real overfit: the component learners were broader than
+replay, but the synthetic-link frontend connecting them was highly specific.
+
+`SPI-000.md` now replaces the SPI-specific failure with a bounded anonymous
+four-pin search. All eight SPI cases advance through autonomous topology and
+symbol extraction. The current matrix is:
+
+| Family | Cases | Deepest layer |
+| --- | ---: | --- |
+| SPI | 8 | `spi_symbols` |
+| UART | 4 | `uart_symbols` |
+| I²C | 1 | `i2c_frames` |
+
+SPI retains representation equivalence. UART retains every polarity, period,
+width, parity, and stop interpretation consistent with the samples. I²C
+recovers pin roles, frames, and ACK ownership while recording its open-drain
+execution constraint. Golden labels are not used to break symmetry.
 
 ## Known versus invented protocols
 
@@ -113,10 +126,10 @@ capture -> pin roles -> timing -> symbols -> frames -> fields
 A family name is never an inference target. Success means producing an
 equivalent executable description, not recognizing the label "SPI."
 
-## Immediate next step
+## Current boundary
 
-Replace the selected-serial assumptions with topology families rather than
-special cases. SPI is the smallest next target: infer active select polarity,
-clock idle level and sampling edge, two simultaneous data pins, and the known
-bit-order equivalence. UART and I²C should remain explicit unsupported results
-until their distinct topology engines exist.
+The known corpus establishes topology and symbol/frame extraction, not broad
+wire impersonation. The generated benchmark therefore reports UART transmit
+timing and session behavior as unsupported, and refuses I²C emulation pending
+open-drain ownership proof. Arbitration and clock stretching also remain
+outside the I²C claim. These limits are reportable results, not hidden misses.

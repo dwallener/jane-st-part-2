@@ -172,29 +172,87 @@ def _frontend_gap(case: BenchmarkCase) -> str:
     return "protocol topology is outside the current selected serial frontend"
 
 
-def score_current_frontend(case: BenchmarkCase) -> BenchmarkScore:
+def score_benchmark_case(case: BenchmarkCase) -> BenchmarkScore:
     edge_trace = compress_waveform(case.inference_input())
     round_trip = expand_edge_trace(edge_trace) == case.inference_input()
     activities = profile_pins(edge_trace)
     profile_ok = len(activities) == case.waveform.pin_count
+    base_layers = (
+        LayerResult(
+            "capture",
+            round_trip,
+            "anonymous waveform round-trips losslessly"
+            if round_trip
+            else "edge compression changed the waveform",
+        ),
+        LayerResult(
+            "activity_profile",
+            profile_ok,
+            "per-pin transitions and edge intervals extracted"
+            if profile_ok
+            else "pin activity extraction failed",
+        ),
+    )
+    if case.truth.family == "SPI":
+        from spi_hypothesis import infer_spi
+
+        inference = infer_spi(case.inference_input())
+        topology_ok = bool(inference.candidates)
+        layers = base_layers + (
+            LayerResult(
+                "spi_topology",
+                topology_ok,
+                "clock, select polarity, idle level, and sampling edge inferred"
+                if topology_ok
+                else "no bounded SPI topology survived",
+            ),
+            LayerResult(
+                "spi_symbols",
+                topology_ok,
+                "both data words decoded with explicit direction/order symmetries"
+                if topology_ok
+                else "SPI symbols were not decoded",
+            ),
+        )
+    elif case.truth.family == "UART":
+        from uart_inference import infer_uart
+
+        candidates = infer_uart((case.inference_input(),))
+        decoded = bool(candidates)
+        layers = base_layers + (
+            LayerResult(
+                "uart_symbols",
+                decoded,
+                "symbols decoded while retaining timing and format equivalence"
+                if decoded
+                else "no bounded UART interpretation survived",
+            ),
+        )
+    elif case.truth.family == "I2C":
+        from i2c_inference import infer_i2c
+
+        candidates = infer_i2c(case.inference_input())
+        decoded = bool(candidates)
+        layers = base_layers + (
+            LayerResult(
+                "i2c_frames",
+                decoded,
+                "roles, frames, and ACK ownership decoded with open-drain constraint"
+                if decoded
+                else "no bounded I2C interpretation survived",
+            ),
+        )
+    else:
+        layers = base_layers + (
+            LayerResult("current_frontend", False, _frontend_gap(case)),
+        )
     return BenchmarkScore(
         case_name=case.name,
         family=case.truth.family,
-        layers=(
-            LayerResult(
-                "capture",
-                round_trip,
-                "anonymous waveform round-trips losslessly"
-                if round_trip
-                else "edge compression changed the waveform",
-            ),
-            LayerResult(
-                "activity_profile",
-                profile_ok,
-                "per-pin transitions and edge intervals extracted"
-                if profile_ok
-                else "pin activity extraction failed",
-            ),
-            LayerResult("current_frontend", False, _frontend_gap(case)),
-        ),
+        layers=layers,
     )
+
+
+def score_current_frontend(case: BenchmarkCase) -> BenchmarkScore:
+    """Backward-compatible name for the evolving corpus scorer."""
+    return score_benchmark_case(case)

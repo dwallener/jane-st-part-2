@@ -48,17 +48,22 @@ class WaveformAdapterTest(unittest.TestCase):
         self.assertEqual(activities[clock].rising_edges, 8)
         self.assertEqual(activities[clock].falling_edges, 8)
 
-    def test_failure_matrix_is_honest_about_current_frontend(self) -> None:
+    def test_known_families_reach_their_symbol_frontends(self) -> None:
         scores = tuple(score_current_frontend(case) for case in benchmark_cases())
 
         self.assertEqual(len(scores), 13)
-        self.assertTrue(
-            all(score.deepest_passed_layer == "activity_profile" for score in scores)
+        self.assertEqual(
+            sum(score.deepest_passed_layer == "spi_symbols" for score in scores),
+            8,
         )
-        self.assertTrue(
-            all(score.layers[-1].layer == "current_frontend" for score in scores)
+        self.assertEqual(
+            sum(score.deepest_passed_layer == "uart_symbols" for score in scores),
+            4,
         )
-        self.assertTrue(all(not score.layers[-1].passed for score in scores))
+        self.assertEqual(
+            sum(score.deepest_passed_layer == "i2c_frames" for score in scores),
+            1,
+        )
 
 
 if __name__ == "__main__":
