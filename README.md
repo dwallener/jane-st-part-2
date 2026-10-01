@@ -4,9 +4,9 @@
 > digital peripheral, explains what it knows, and can impersonate the original
 > device.
 
-**Status:** autonomous SPI tapeout candidate integrated; a four-wire link may
-occupy any four of the eight bidirectional pins. The previous integrated
-revision completed the CMOS5L backend; the widened revision awaits rerun.
+**Status:** autonomous SPI tapeout candidate and passive polyglot frontend
+integrated. The polyglot revision completed the CMOS5L backend; the subsequent
+lint cleanup and knowledge-report extension require a final backend rerun.
 
 This is a prospective entry for Jane Street's
 [Protocol Emulator ASIC Competition](https://blog.janestreet.com/protocol-emulator-asic-competition/).
@@ -55,6 +55,21 @@ An equivalence classifier merges all ready inference surfaces into structural
 survivors and reports unique, equivalent, or insufficient without choosing a
 protocol brand; see
 [`docs/EQUIVALENCE-RTL-001.md`](docs/EQUIVALENCE-RTL-001.md).
+
+The integrated knowledge report turns those survivors into a useful answer:
+what is known, whether the observation was trustworthy, which candidate
+boundaries were actually observed, why inference stopped, what evidence to
+seek next, and whether active behavior is electrically and explicitly
+authorized. See
+[`docs/KNOWLEDGE-RTL-001.md`](docs/KNOWLEDGE-RTL-001.md). Its recommendations
+are advisory and cannot assert a protocol-pin output enable.
+
+The first active-interrogation simulation is intentionally isolated from test
+truth. A black-box target randomly selects one of two open-drain address
+hypotheses; a synthesizable low-or-release probe observes ACK/NACK and retains
+the correct candidate without receiving the selection. This is a standalone
+kernel, not yet a top-level capability. See
+[`docs/INTERROGATION-SIM-001.md`](docs/INTERROGATION-SIM-001.md).
 
 This is not an attempt to recover human meaning such as "this byte is
 temperature." It is an attempt to learn an executable, timed behavioral model.

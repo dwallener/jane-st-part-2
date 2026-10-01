@@ -34,7 +34,7 @@ class I2cSymbolHypothesisRtlTest(unittest.TestCase):
 `timescale 1ns/1ps
 module tb;
 reg clk=0,rst_n=0,observe_enable=0;reg[7:0]pin_sample=0;
-wire ready,candidate_valid,candidate_ambiguous,open_drain_required;
+    wire ready,candidate_valid,candidate_ambiguous,open_drain_required,evidence_saturated;
 wire[5:0]candidate_count;wire[7:0]clock_candidate_mask,data_candidate_mask;
 wire[2:0]clock_pin,data_pin;wire[7:0]first_byte,second_byte;
 wire[1:0]ack_bits,decoded_byte_count;

@@ -24,6 +24,7 @@ project:
     - "i2c_symbol_hypothesis.v"
     - "generic_event_framer.v"
     - "protocol_equivalence_classifier.v"
+    - "protocol_knowledge_reporter.v"
     - "template_learner.v"
     - "mindreader_supervisor.v"
     - "spi_physical_learner.v"

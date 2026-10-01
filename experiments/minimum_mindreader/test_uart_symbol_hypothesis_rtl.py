@@ -55,7 +55,7 @@ class UartSymbolHypothesisRtlTest(unittest.TestCase):
 `timescale 1ns/1ps
 module tb;
 reg clk=0,rst_n=0,observe_enable=0;reg[7:0]pin_sample=0;
-wire ready,candidate_valid,candidate_ambiguous,uart_pin_valid,idle_level;
+    wire ready,candidate_valid,candidate_ambiguous,uart_pin_valid,idle_level,evidence_saturated;
 wire[2:0]uart_pin,parity_mask;wire[14:0]bit_period_mask;wire[4:0]data_width_mask;
 wire[1:0]stop_count_mask;wire[9:0]candidate_count;wire[8:0]decoded_value;
 always#5 clk=~clk;

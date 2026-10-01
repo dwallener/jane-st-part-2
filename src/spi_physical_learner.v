@@ -23,7 +23,8 @@ module spi_physical_learner (
     output reg        sample_trailing,
     output reg  [5:0] candidate_count,
     output reg  [7:0] data_candidate_mask,
-    output reg  [3:0] data_candidate_count
+    output reg  [3:0] data_candidate_count,
+    output reg        evidence_saturated
 );
 
   reg running;
@@ -34,13 +35,10 @@ module spi_physical_learner (
   reg [63:0] leading_data_dirty;
   reg [63:0] trailing_data_dirty;
   reg [63:0] candidate_mask;
-  reg [7:0] changed;
-  reg [7:0] possible_data_mask;
-  reg selected;
+  wire [7:0] changed = previous_sample ^ pin_sample;
   integer pin_index;
   integer select_index;
   integer clock_index;
-  integer pair_index;
   integer scan_index;
 
   assign physical_complete = ready && (candidate_count == 1) &&
@@ -90,6 +88,7 @@ module spi_physical_learner (
       leading_data_dirty <= 64'b0;
       trailing_data_dirty <= 64'b0;
       candidate_mask <= 64'b0;
+      evidence_saturated <= 1'b0;
       for (pin_index = 0; pin_index < 8; pin_index = pin_index + 1)
         transition_count[pin_index] <= 0;
     end else if (capture_enable && !running) begin
@@ -101,31 +100,30 @@ module spi_physical_learner (
       leading_data_dirty <= 64'b0;
       trailing_data_dirty <= 64'b0;
       candidate_mask <= 64'b0;
+      evidence_saturated <= 1'b0;
       for (pin_index = 0; pin_index < 8; pin_index = pin_index + 1)
         transition_count[pin_index] <= 0;
     end else if (capture_enable && running) begin
-      changed = previous_sample ^ pin_sample;
       previous_sample <= pin_sample;
       for (pin_index = 0; pin_index < 8; pin_index = pin_index + 1) begin
         if (changed[pin_index] && transition_count[pin_index] != 5'h1f)
           transition_count[pin_index] <= transition_count[pin_index] + 1'b1;
+        else if (changed[pin_index])
+          evidence_saturated <= 1'b1;
       end
       for (select_index = 0; select_index < 8; select_index = select_index + 1) begin
         for (clock_index = 0; clock_index < 8; clock_index = clock_index + 1) begin
-          pair_index = select_index * 8 + clock_index;
           if (select_index != clock_index && changed[clock_index]) begin
-            selected = pin_sample[select_index] != initial_sample[select_index];
-            if (!selected) begin
-              clock_outside_select[pair_index] <= 1'b1;
+            if (pin_sample[select_index] == initial_sample[select_index]) begin
+              clock_outside_select[select_index * 8 + clock_index] <= 1'b1;
             end else begin
-              possible_data_mask = 8'hff;
-              possible_data_mask[select_index] = 1'b0;
-              possible_data_mask[clock_index] = 1'b0;
               if (previous_sample[clock_index] == initial_sample[clock_index]) begin
-                if (|(changed & possible_data_mask))
-                  leading_data_dirty[pair_index] <= 1'b1;
-              end else if (|(changed & possible_data_mask)) begin
-                trailing_data_dirty[pair_index] <= 1'b1;
+                if (|(changed & ~(8'b1 << select_index) &
+                      ~(8'b1 << clock_index)))
+                  leading_data_dirty[select_index * 8 + clock_index] <= 1'b1;
+              end else if (|(changed & ~(8'b1 << select_index) &
+                             ~(8'b1 << clock_index))) begin
+                trailing_data_dirty[select_index * 8 + clock_index] <= 1'b1;
               end
             end
           end
@@ -136,16 +134,15 @@ module spi_physical_learner (
       ready <= 1'b1;
       for (select_index = 0; select_index < 8; select_index = select_index + 1) begin
         for (clock_index = 0; clock_index < 8; clock_index = clock_index + 1) begin
-          pair_index = select_index * 8 + clock_index;
-          candidate_mask[pair_index] <=
+          candidate_mask[select_index * 8 + clock_index] <=
               (select_index != clock_index) &&
               (transition_count[select_index] == 2) &&
               (transition_count[clock_index] == 16) &&
               (pin_sample[select_index] == initial_sample[select_index]) &&
               (pin_sample[clock_index] == initial_sample[clock_index]) &&
-              !clock_outside_select[pair_index] &&
-              (leading_data_dirty[pair_index] ^
-               trailing_data_dirty[pair_index]);
+              !clock_outside_select[select_index * 8 + clock_index] &&
+              (leading_data_dirty[select_index * 8 + clock_index] ^
+               trailing_data_dirty[select_index * 8 + clock_index]);
         end
       end
     end

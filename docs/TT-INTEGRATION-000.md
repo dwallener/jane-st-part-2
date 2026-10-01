@@ -1,6 +1,6 @@
 # TT-INTEGRATION-000: Autonomous Mindreader Tapeout Candidate
 
-**Status:** RTL-integrated and locally verified  
+**Status:** RTL-integrated, locally verified, and successfully routed
 **Date:** 2026-09-30
 
 The disposable counter smoke test has been removed from `mindreader_core.v`.
@@ -63,8 +63,9 @@ clocks after capture. It synthesizes to 2,895 cells for the UART block and
 space. Yosys reports zero structural problems and no inferred latches. A new
 CMOS5L backend run is still required before making any routed fit claim.
 
-The current local regression passes 119 experiment/component tests, 68
-parameterized subtests, and all five TinyTapeout top-level cocotb scenarios. The
+The current local regression passes 121 experiment/component tests, 84
+parameterized/randomized subtests, and all six TinyTapeout top-level cocotb
+scenarios. The
 second top-level scenario identifies a normal-idle 8N1-compatible trace on
 physical pin 3 while proving that neither the SPI-complete bit nor any output
 enable can assert.
@@ -95,5 +96,21 @@ with a second active pin refuses pin identity; a shared-two-wire trace without
 STOP yields no candidate; and unequal bursts eliminate only the fixed-count
 interpretation. All five cases require `uio_oe == 0` throughout.
 
-The generic count is not a placement result. Fit, routed timing, DRC, precheck,
-and gate-level behavior must be decided by the TinyTapeout CMOS5L backend.
+The TinyTapeout CMOS5L backend subsequently completed successfully for the
+integrated polyglot design. The routed core used 305,735 square micrometres of
+902,417 square micrometres available (33.88% standard-cell utilization), with
+21,680 functional/timing cells. Final routing reached zero DRC errors; Magic
+DRC, LVS, antenna, disconnected-pin, power-grid, TinyTapeout precheck, and
+gate-level simulation checks all passed. Typical-corner 50 MHz setup and hold
+passed. The extreme slow 1.08 V / 125 C corner did not meet 50 MHz and remains
+a documented PVT limitation rather than part of the configured TinyTapeout
+acceptance claim.
+
+Later lint-only refactoring was formally equivalent to the routed revision.
+The knowledge-report and saturation-disclosure logic described in
+`KNOWLEDGE-RTL-001.md` is newer than that backend run and therefore requires a
+fresh GDS run before its area and timing are claimed.
+
+The current knowledge-report revision synthesizes locally to 21,414 generic
+cells, including 59 cells for the combinational reporter itself. This is a
+generic synthesis comparison, not a routed-area projection.

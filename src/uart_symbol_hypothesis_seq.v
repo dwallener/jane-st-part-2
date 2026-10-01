@@ -24,7 +24,8 @@ module uart_symbol_hypothesis (
     output reg  [2:0]  parity_mask,
     output reg  [1:0]  stop_count_mask,
     output reg  [9:0]  candidate_count,
-    output reg  [8:0]  decoded_value
+    output reg  [8:0]  decoded_value,
+    output reg         evidence_saturated
 );
 
   reg running;
@@ -44,11 +45,19 @@ module uart_symbol_hypothesis (
   reg [1:0] eval_parity;
   reg [1:0] eval_stops;
 
-  reg [7:0] changed;
+  wire [7:0] changed = previous_sample ^ pin_sample;
+  wire [3:0] change_count =
+      {3'b000, changed[0]} + {3'b000, changed[1]} +
+      {3'b000, changed[2]} + {3'b000, changed[3]} +
+      {3'b000, changed[4]} + {3'b000, changed[5]} +
+      {3'b000, changed[6]} + {3'b000, changed[7]};
+  wire [2:0] changed_pin =
+      changed[0] ? 3'd0 : changed[1] ? 3'd1 :
+      changed[2] ? 3'd2 : changed[3] ? 3'd3 :
+      changed[4] ? 3'd4 : changed[5] ? 3'd5 :
+      changed[6] ? 3'd6 : 3'd7;
   integer seq_pin_index;
   integer seq_period;
-  integer change_count;
-  integer changed_pin;
 
   integer eval_data_index;
   integer eval_stop_index;
@@ -134,6 +143,7 @@ module uart_symbol_hypothesis (
       stop_count_mask <= 0;
       candidate_count <= 0;
       decoded_value <= 0;
+      evidence_saturated <= 1'b0;
       for (seq_period = 0; seq_period <= 16;
            seq_period = seq_period + 1) begin
         phase[seq_period] <= 0;
@@ -154,6 +164,7 @@ module uart_symbol_hypothesis (
       stop_count_mask <= 0;
       candidate_count <= 0;
       decoded_value <= 0;
+      evidence_saturated <= 1'b0;
       for (seq_period = 0; seq_period <= 16;
            seq_period = seq_period + 1) begin
         phase[seq_period] <= 0;
@@ -161,22 +172,12 @@ module uart_symbol_hypothesis (
         sampled_symbols[seq_period] <= 0;
       end
     end else if (observe_enable && running) begin
-      changed = previous_sample ^ pin_sample;
       previous_sample <= pin_sample;
-      change_count = 0;
-      changed_pin = 0;
-      for (seq_pin_index = 0; seq_pin_index < 8;
-           seq_pin_index = seq_pin_index + 1) begin
-        if (changed[seq_pin_index]) begin
-          change_count = change_count + 1;
-          changed_pin = seq_pin_index;
-        end
-      end
 
       if (!started && (change_count != 0)) begin
         if (change_count == 1) begin
           started <= 1'b1;
-          uart_pin <= changed_pin[2:0];
+          uart_pin <= changed_pin;
           idle_level <= previous_sample[changed_pin];
         end else begin
           multiple_active <= 1'b1;
@@ -200,6 +201,10 @@ module uart_symbol_hypothesis (
                   pin_sample[uart_pin];
               symbol_count[seq_period] <=
                   symbol_count[seq_period] + 1'b1;
+            end else if ((phase[seq_period] ==
+                         ((seq_period[4:0] >> 1) - 5'd1)) &&
+                         (symbol_count[seq_period] >= 16)) begin
+              evidence_saturated <= 1'b1;
             end
             if (phase[seq_period] == (seq_period[4:0] - 5'd1))
               phase[seq_period] <= 0;

@@ -17,7 +17,9 @@ module autonomous_spi_mindreader (
     output wire [2:0] inferred_select_pin, inferred_clock_pin,
     output wire [2:0] inferred_data_a_pin, inferred_data_b_pin,
     output wire inferred_select_active_level, inferred_clock_idle_level,
-    output wire inferred_sample_trailing
+    output wire inferred_sample_trailing,
+    output wire physical_evidence_saturated,
+    output wire frame_incomplete
 );
   wire physical_ready;
   wire [2:0] select_pin, clock_pin, data_a_pin, data_b_pin;
@@ -34,10 +36,13 @@ module autonomous_spi_mindreader (
       .clock_idle_level(clock_idle_level), .sample_trailing(sample_trailing),
       .candidate_count(physical_candidates),
       .data_candidate_mask(physical_data_mask),
-      .data_candidate_count(physical_data_candidates)
+      .data_candidate_count(physical_data_candidates),
+      .evidence_saturated(physical_evidence_saturated)
   );
 
   wire observation_valid, observation_aborted;
+  reg frame_incomplete_latched;
+  reg learn_was_enabled;
   wire [7:0] data_a_word, data_b_word;
   spi_transaction_decoder decoder (
       .clk(clk), .rst_n(rst_n), .enable(learn_enable && physical_complete),
@@ -49,6 +54,22 @@ module autonomous_spi_mindreader (
       .transaction_aborted(observation_aborted),
       .data_a_word(data_a_word), .data_b_word(data_b_word)
   );
+
+  // Preserve candidate-relative failure to close a learned SPI transaction
+  // until the next learning window. A one-cycle decoder pulse would otherwise
+  // disappear before a host could enter passive status mode.
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      frame_incomplete_latched <= 1'b0;
+      learn_was_enabled <= 1'b0;
+    end else begin
+      learn_was_enabled <= learn_enable;
+      if (learn_enable && !learn_was_enabled)
+        frame_incomplete_latched <= 1'b0;
+      else if (observation_aborted)
+        frame_incomplete_latched <= 1'b1;
+    end
+  end
 
   wire [2:0] live_request_pin, live_response_pin;
   wire [7:0] live_request_mask, live_request_value;
@@ -122,9 +143,10 @@ module autonomous_spi_mindreader (
   assign inferred_select_active_level = select_active_level;
   assign inferred_clock_idle_level = clock_idle_level;
   assign inferred_sample_trailing = sample_trailing;
+  assign frame_incomplete = frame_incomplete_latched;
   wire _unused_physical = &{1'b0, physical_ready, physical_candidates,
                             physical_data_mask, physical_data_candidates,
-                            observation_aborted, live_delay, passive,
+                            live_delay, passive,
                             model_admitted};
 endmodule
 `default_nettype wire

@@ -85,6 +85,7 @@ module mindreader_core (
   wire [2:0] candidate_classes;
   wire router_insufficient;
   wire router_ambiguous;
+  wire router_evidence_saturated;
 
   serial_hypothesis_router hypothesis_router (
       .clk(clk), .rst_n(rst_n),
@@ -95,6 +96,7 @@ module mindreader_core (
       .clock_candidate_mask(clock_candidate_mask),
       .select_candidate_mask(select_candidate_mask),
       .candidate_classes(candidate_classes),
+      .evidence_saturated(router_evidence_saturated),
       .insufficient(router_insufficient), .ambiguous(router_ambiguous)
   );
 
@@ -110,6 +112,7 @@ module mindreader_core (
   wire [1:0] uart_stop_mask;
   wire [9:0] uart_candidate_count;
   wire [8:0] uart_decoded_value;
+  wire uart_evidence_saturated;
 
   uart_symbol_hypothesis uart_hypothesis (
       .clk(clk), .rst_n(rst_n),
@@ -122,7 +125,8 @@ module mindreader_core (
       .data_width_mask(uart_width_mask), .parity_mask(uart_parity_mask),
       .stop_count_mask(uart_stop_mask),
       .candidate_count(uart_candidate_count),
-      .decoded_value(uart_decoded_value)
+      .decoded_value(uart_decoded_value),
+      .evidence_saturated(uart_evidence_saturated)
   );
 
   wire i2c_ready;
@@ -138,6 +142,7 @@ module mindreader_core (
   wire [1:0] i2c_ack_bits;
   wire [1:0] i2c_byte_count;
   wire i2c_open_drain_required;
+  wire i2c_evidence_saturated;
 
   i2c_symbol_hypothesis i2c_hypothesis (
       .clk(clk), .rst_n(rst_n),
@@ -151,6 +156,7 @@ module mindreader_core (
       .clock_pin(i2c_clock_pin), .data_pin(i2c_data_pin),
       .first_byte(i2c_first_byte), .second_byte(i2c_second_byte),
       .ack_bits(i2c_ack_bits), .decoded_byte_count(i2c_byte_count),
+      .evidence_saturated(i2c_evidence_saturated),
       .open_drain_required(i2c_open_drain_required)
   );
 
@@ -162,6 +168,7 @@ module mindreader_core (
   wire [3:0] generic_burst_count;
   wire generic_ambiguous;
   wire generic_insufficient;
+  wire generic_evidence_saturated;
 
   generic_event_framer generic_framer (
       .clk(clk), .rst_n(rst_n),
@@ -172,6 +179,7 @@ module mindreader_core (
       .first_burst_events(generic_first_events),
       .latest_burst_events(generic_latest_events),
       .burst_count(generic_burst_count),
+      .evidence_saturated(generic_evidence_saturated),
       .ambiguous(generic_ambiguous),
       .insufficient(generic_insufficient)
   );
@@ -207,6 +215,8 @@ module mindreader_core (
   // the registered fault feeds the supervisor, avoiding a combinational loop
   // through drive_enable while preserving immediate electrical release.
   wire contention = contention_fault;
+  wire physical_evidence_saturated;
+  wire spi_frame_incomplete;
 
   autonomous_spi_mindreader mindreader (
       .clk(clk), .rst_n(rst_n),
@@ -227,7 +237,9 @@ module mindreader_core (
       .inferred_data_b_pin(data_b_pin),
       .inferred_select_active_level(select_active_level),
       .inferred_clock_idle_level(clock_idle_level),
-      .inferred_sample_trailing(sample_trailing)
+      .inferred_sample_trailing(sample_trailing),
+      .physical_evidence_saturated(physical_evidence_saturated),
+      .frame_incomplete(spi_frame_incomplete)
   );
 
   spi_timing_guard timing_guard (
@@ -268,6 +280,39 @@ module mindreader_core (
       activity_seen,
       candidate_classes
   };
+  wire evidence_saturated = router_evidence_saturated ||
+                            uart_evidence_saturated ||
+                            i2c_evidence_saturated ||
+                            generic_evidence_saturated ||
+                            physical_evidence_saturated;
+  wire [7:0] closure_mask = {
+      2'b00,
+      generic_candidate_classes,
+      i2c_candidate_valid,
+      physical_complete,
+      uart_candidate_valid
+  };
+  wire [7:0] knowledge_state;
+  wire [7:0] knowledge_reason;
+  wire [7:0] next_evidence;
+  wire [7:0] knowledge_safety;
+
+  protocol_knowledge_reporter knowledge_reporter (
+      .observation_active(discover_enable || learn_enable),
+      .report_ready(equivalence_ready),
+      .activity_seen(activity_seen), .bus_quiet(bus_quiet),
+      .evidence_saturated(evidence_saturated),
+      .contradiction(fault_reason == 3'd1),
+      .interpretation_mask(interpretation_mask),
+      .interpretation_count(interpretation_count),
+      .closure_mask(closure_mask),
+      .roles_resolved(physical_complete && direction_resolved),
+      .timing_admissible(timing_admissible),
+      .ownership_granted(ownership_granted),
+      .model_ready(frozen_model_valid),
+      .knowledge_state(knowledge_state), .reason_code(knowledge_reason),
+      .next_evidence_code(next_evidence), .safety_status(knowledge_safety)
+  );
   reg [7:0] paged_status;
   always @* begin
     case (status_page)
@@ -304,6 +349,18 @@ module mindreader_core (
                              interpretation_unique,
                              interpretation_insufficient,
                              interpretation_count};
+      5'h16: paged_status = knowledge_state;
+      5'h17: paged_status = knowledge_reason;
+      5'h18: paged_status = next_evidence;
+      5'h19: paged_status = knowledge_safety;
+      5'h1a: paged_status = closure_mask;
+      5'h1b: paged_status = {1'b0, evidence_saturated,
+                             router_evidence_saturated,
+                             uart_evidence_saturated,
+                             i2c_evidence_saturated,
+                             generic_evidence_saturated,
+                             physical_evidence_saturated,
+                             spi_frame_incomplete};
       default: paged_status = 8'hff;
     endcase
   end

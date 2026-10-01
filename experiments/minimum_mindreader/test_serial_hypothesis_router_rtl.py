@@ -63,7 +63,7 @@ class SerialHypothesisRouterRtlTest(unittest.TestCase):
 `timescale 1ns/1ps
 module tb;
 reg clk=0,rst_n=0,observe_enable=0; reg[7:0]pin_sample=0;
-wire ready,insufficient,ambiguous; wire[7:0]activity_mask,async_candidate_mask,clock_candidate_mask,select_candidate_mask; wire[2:0]candidate_classes;
+    wire ready,insufficient,ambiguous,evidence_saturated; wire[7:0]activity_mask,async_candidate_mask,clock_candidate_mask,select_candidate_mask; wire[2:0]candidate_classes;
 always#5 clk=~clk;
 serial_hypothesis_router dut(.*);
 task tick;begin @(posedge clk);#1;end endtask

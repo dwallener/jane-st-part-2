@@ -86,7 +86,13 @@ status mode and retains its normal activate/contradiction meaning.
 | `13` | `E2` | event count in the latest burst |
 | `14` | `86` | merged interpretation mask: UART-like, selected synchronous, shared two-wire, control, gap, fixed-count |
 | `15` | `A6` | merged ready, equivalent, unique, insufficient, and interpretation count |
-| `16`–`1F` | — | reserved (`FF`) |
+| `16` | `C6` | knowledge state |
+| `17` | `E6` | reason code |
+| `18` | `8A` | next-evidence recommendation |
+| `19` | `AA` | safety/admission status |
+| `1A` | `CA` | candidate-relative closure mask |
+| `1B` | `EA` | aggregate and per-collector saturation plus incomplete-SPI evidence |
+| `1C`–`1F` | — | reserved (`FF`) |
 
 The structural candidate bits are asynchronous single-wire, selected
 synchronous, and shared two-wire clocked. They are intentionally nonexclusive.
@@ -94,6 +100,10 @@ The UART bank likewise retains all compatible framing interpretations. Generic
 framing bits represent two-edge control enclosure, quiet-gap separation, and
 equal event counts across separated bursts. None of these surfaces authorizes
 pin drive.
+
+Knowledge-state, reason, and next-evidence code values are defined in
+`docs/KNOWLEDGE-RTL-001.md`. Candidate closure is explicitly relative to the
+six interpretations on page `14`; it is not a universal packet-complete claim.
 
 ## How to test
 

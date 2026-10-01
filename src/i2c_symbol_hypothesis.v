@@ -25,6 +25,7 @@ module i2c_symbol_hypothesis (
     output reg  [7:0] second_byte,
     output reg  [1:0] ack_bits,
     output reg  [1:0] decoded_byte_count,
+    output reg        evidence_saturated,
     output wire       open_drain_required
 );
 
@@ -43,11 +44,6 @@ module i2c_symbol_hypothesis (
 
   integer candidate_index;
   integer count_index;
-  integer candidate_clock;
-  integer candidate_data;
-  reg is_start;
-  reg is_stop;
-  reg is_clock_rise;
 
   assign candidate_valid = ready && (candidate_count != 0);
   assign candidate_ambiguous = candidate_valid && (candidate_count != 1);
@@ -92,6 +88,7 @@ module i2c_symbol_hypothesis (
       active <= 0;
       start_seen <= 0;
       stop_seen <= 0;
+      evidence_saturated <= 1'b0;
       for (candidate_index = 0; candidate_index < 64;
            candidate_index = candidate_index + 1) begin
         bit_position[candidate_index] <= 0;
@@ -108,13 +105,13 @@ module i2c_symbol_hypothesis (
       active <= 0;
       start_seen <= 0;
       stop_seen <= 0;
+      evidence_saturated <= 1'b0;
       for (candidate_index = 0; candidate_index < 64;
            candidate_index = candidate_index + 1) begin
-        candidate_clock = candidate_index >> 3;
-        candidate_data = candidate_index & 7;
         alive[candidate_index] <=
-            (candidate_clock != candidate_data) &&
-            pin_sample[candidate_clock] && pin_sample[candidate_data];
+            (candidate_index[5:3] != candidate_index[2:0]) &&
+            pin_sample[candidate_index[5:3]] &&
+            pin_sample[candidate_index[2:0]];
         bit_position[candidate_index] <= 0;
         byte_count[candidate_index] <= 0;
         byte_shift[candidate_index] <= 0;
@@ -126,25 +123,18 @@ module i2c_symbol_hypothesis (
       previous_sample <= pin_sample;
       for (candidate_index = 0; candidate_index < 64;
            candidate_index = candidate_index + 1) begin
-        candidate_clock = candidate_index >> 3;
-        candidate_data = candidate_index & 7;
-        is_start = previous_sample[candidate_data] &&
-                   !pin_sample[candidate_data] &&
-                   pin_sample[candidate_clock];
-        is_stop = !previous_sample[candidate_data] &&
-                  pin_sample[candidate_data] &&
-                  pin_sample[candidate_clock];
-        is_clock_rise = !previous_sample[candidate_clock] &&
-                        pin_sample[candidate_clock];
-
         if (alive[candidate_index]) begin
-          if (is_start) begin
+          if (previous_sample[candidate_index[2:0]] &&
+              !pin_sample[candidate_index[2:0]] &&
+              pin_sample[candidate_index[5:3]]) begin
             start_seen[candidate_index] <= 1'b1;
             active[candidate_index] <= 1'b1;
             stop_seen[candidate_index] <= 1'b0;
             bit_position[candidate_index] <= 0;
             byte_count[candidate_index] <= 0;
-          end else if (is_stop) begin
+          end else if (!previous_sample[candidate_index[2:0]] &&
+                       pin_sample[candidate_index[2:0]] &&
+                       pin_sample[candidate_index[5:3]]) begin
             // A STOP raises data while clock is high. The preceding clock
             // rise may look like the first bit of another group to a purely
             // edge-driven decoder; discard that incomplete trailing group.
@@ -156,11 +146,13 @@ module i2c_symbol_hypothesis (
             end else begin
               alive[candidate_index] <= 1'b0;
             end
-          end else if (is_clock_rise && active[candidate_index]) begin
+          end else if (!previous_sample[candidate_index[5:3]] &&
+                       pin_sample[candidate_index[5:3]] &&
+                       active[candidate_index]) begin
             if (bit_position[candidate_index] < 8) begin
               byte_shift[candidate_index] <=
                   {byte_shift[candidate_index][6:0],
-                   pin_sample[candidate_data]};
+                   pin_sample[candidate_index[2:0]]};
               bit_position[candidate_index] <=
                   bit_position[candidate_index] + 1'b1;
             end else begin
@@ -168,16 +160,18 @@ module i2c_symbol_hypothesis (
                 candidate_first[candidate_index] <=
                     byte_shift[candidate_index];
                 candidate_ack[candidate_index][0] <=
-                    pin_sample[candidate_data];
+                    pin_sample[candidate_index[2:0]];
               end else if (byte_count[candidate_index] == 1) begin
                 candidate_second[candidate_index] <=
                     byte_shift[candidate_index];
                 candidate_ack[candidate_index][1] <=
-                    pin_sample[candidate_data];
+                    pin_sample[candidate_index[2:0]];
               end
               if (byte_count[candidate_index] != 3)
                 byte_count[candidate_index] <=
                     byte_count[candidate_index] + 1'b1;
+              else
+                evidence_saturated <= 1'b1;
               bit_position[candidate_index] <= 0;
             end
           end

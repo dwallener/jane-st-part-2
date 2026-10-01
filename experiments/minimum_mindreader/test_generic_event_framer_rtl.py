@@ -18,7 +18,7 @@ class GenericEventFramerRtlTest(unittest.TestCase):
 `timescale 1ns/1ps
 module tb;
 reg clk=0,rst_n=0,observe_enable=0;reg[7:0]pin_sample=0;
-wire ready,ambiguous,insufficient;wire[2:0]candidate_classes;
+    wire ready,ambiguous,insufficient,evidence_saturated;wire[2:0]candidate_classes;
 wire[7:0]control_candidate_mask,first_burst_events,latest_burst_events;
 wire[3:0]burst_count;
 always#5 clk=~clk;

@@ -442,7 +442,6 @@ async def test_passive_refusal_controls_top(dut):
     await Timer(1, unit="ns")
     assert int(dut.uo_out.value) == 0
     assert int(dut.uio_oe.value) == 0
-
     # A selected-synchronous fragment without its closing select edge cannot
     # complete physical inference.
     fragment = spi_mode1_frame(0xA5, 0x62)[:8]
@@ -499,4 +498,49 @@ async def test_passive_refusal_controls_top(dut):
     generic_metadata = int(dut.uo_out.value)
     assert generic_metadata & 0x02
     assert not (generic_metadata & 0x04)
+    assert int(dut.uio_oe.value) == 0
+
+
+@cocotb.test()
+async def test_observation_integrity_disclosure_top(dut):
+    clock = Clock(dut.clk, 20, unit="ns")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+    await tick(dut, 2)
+    dut.rst_n.value = 1
+    await tick(dut)
+
+    # More transitions than the bounded counters can represent must poison
+    # the report explicitly, never silently produce a confident conclusion.
+    dut.ui_in.value = DISCOVER
+    for index in range(260):
+        dut.uio_in.value = index & 1
+        await tick(dut)
+    dut.ui_in.value = 0
+    await tick(dut, 2)
+
+    # Pages 16/17/18 report compromised/saturated/recapture.
+    dut.ui_in.value = 0xC6
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0x06
+    dut.ui_in.value = 0xE6
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0x06
+    dut.ui_in.value = 0x8A
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0x06
+
+    # Integrity detail: aggregate saturation plus router, generic-framing,
+    # and physical-role collectors disclose that their bounds were exceeded.
+    dut.ui_in.value = 0xEA
+    await Timer(1, unit="ns")
+    integrity = int(dut.uo_out.value)
+    assert integrity & (1 << 6)
+    assert integrity & (1 << 5)
+    assert integrity & (1 << 2)
+    assert integrity & (1 << 1)
     assert int(dut.uio_oe.value) == 0

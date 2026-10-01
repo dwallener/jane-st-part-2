@@ -19,6 +19,7 @@ module serial_hypothesis_router #(
     output reg  [7:0] clock_candidate_mask,
     output reg  [7:0] select_candidate_mask,
     output reg  [2:0] candidate_classes,
+    output reg        evidence_saturated,
     output wire       insufficient,
     output wire       ambiguous
 );
@@ -28,7 +29,7 @@ module serial_hypothesis_router #(
   reg [7:0] rising_seen;
   reg [7:0] falling_seen;
   reg [7:0] transition_count [0:7];
-  reg [7:0] changed;
+  wire [7:0] changed = previous_sample ^ pin_sample;
   integer comb_pin_index;
   integer seq_pin_index;
   integer active_count;
@@ -75,6 +76,7 @@ module serial_hypothesis_router #(
       previous_sample <= 0;
       rising_seen <= 0;
       falling_seen <= 0;
+      evidence_saturated <= 1'b0;
       for (seq_pin_index = 0; seq_pin_index < 8;
            seq_pin_index = seq_pin_index + 1)
         transition_count[seq_pin_index] <= 0;
@@ -84,11 +86,11 @@ module serial_hypothesis_router #(
       previous_sample <= pin_sample;
       rising_seen <= 0;
       falling_seen <= 0;
+      evidence_saturated <= 1'b0;
       for (seq_pin_index = 0; seq_pin_index < 8;
            seq_pin_index = seq_pin_index + 1)
         transition_count[seq_pin_index] <= 0;
     end else if (observe_enable && running) begin
-      changed = previous_sample ^ pin_sample;
       previous_sample <= pin_sample;
       rising_seen <= rising_seen | (changed & pin_sample);
       falling_seen <= falling_seen | (changed & ~pin_sample);
@@ -98,6 +100,8 @@ module serial_hypothesis_router #(
             transition_count[seq_pin_index] != 8'hff)
           transition_count[seq_pin_index] <=
               transition_count[seq_pin_index] + 1'b1;
+        else if (changed[seq_pin_index])
+          evidence_saturated <= 1'b1;
       end
     end else if (!observe_enable && running) begin
       running <= 1'b0;

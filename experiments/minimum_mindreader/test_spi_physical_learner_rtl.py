@@ -92,7 +92,7 @@ class SpiPhysicalLearnerRtlTest(unittest.TestCase):
 `timescale 1ns/1ps
 module tb;
 reg clk=0, rst_n=0, capture_enable=0; reg [7:0] pin_sample=0;
-wire ready, physical_complete; wire [2:0] select_pin,clock_pin,data_a_pin,data_b_pin;
+    wire ready, physical_complete, evidence_saturated; wire [2:0] select_pin,clock_pin,data_a_pin,data_b_pin;
 wire select_active_level,clock_idle_level,sample_trailing; wire [5:0] candidate_count;
 wire [7:0] data_candidate_mask; wire [3:0] data_candidate_count;
 always #5 clk=~clk;

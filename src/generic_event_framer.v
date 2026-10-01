@@ -20,6 +20,7 @@ module generic_event_framer #(
     output reg  [7:0] first_burst_events,
     output reg  [7:0] latest_burst_events,
     output reg  [3:0] burst_count,
+    output reg        evidence_saturated,
     output wire       ambiguous,
     output wire       insufficient
 );
@@ -36,10 +37,14 @@ module generic_event_framer #(
   reg event_seen;
   reg [7:0] first_event_mask;
   reg [7:0] last_event_mask;
-  reg [7:0] changed;
+  wire [7:0] changed = previous_sample ^ pin_sample;
+  wire [7:0] event_increment =
+      {7'b0, changed[0]} + {7'b0, changed[1]} +
+      {7'b0, changed[2]} + {7'b0, changed[3]} +
+      {7'b0, changed[4]} + {7'b0, changed[5]} +
+      {7'b0, changed[6]} + {7'b0, changed[7]};
   integer comb_pin_index;
   integer seq_pin_index;
-  reg [7:0] event_increment;
   reg [1:0] class_count;
 
   assign ambiguous = ready && (class_count > 1);
@@ -84,6 +89,7 @@ module generic_event_framer #(
       event_seen <= 1'b0;
       first_event_mask <= 0;
       last_event_mask <= 0;
+      evidence_saturated <= 1'b0;
       for (seq_pin_index = 0; seq_pin_index < 8;
            seq_pin_index = seq_pin_index + 1)
         transition_count[seq_pin_index] <= 0;
@@ -100,20 +106,20 @@ module generic_event_framer #(
       event_seen <= 1'b0;
       first_event_mask <= 0;
       last_event_mask <= 0;
+      evidence_saturated <= 1'b0;
       for (seq_pin_index = 0; seq_pin_index < 8;
            seq_pin_index = seq_pin_index + 1)
         transition_count[seq_pin_index] <= 0;
     end else if (observe_enable && running) begin
-      changed = previous_sample ^ pin_sample;
       previous_sample <= pin_sample;
-      event_increment = 8'd0;
       for (seq_pin_index = 0; seq_pin_index < 8;
            seq_pin_index = seq_pin_index + 1) begin
         if (changed[seq_pin_index]) begin
-          event_increment = event_increment + 8'd1;
           if (transition_count[seq_pin_index] != 8'hff)
             transition_count[seq_pin_index] <=
                 transition_count[seq_pin_index] + 1'b1;
+          else
+            evidence_saturated <= 1'b1;
         end
       end
 
@@ -132,11 +138,14 @@ module generic_event_framer #(
             fixed_still_possible <= 1'b0;
           if (completed_bursts != 4'hf)
             completed_bursts <= completed_bursts + 1'b1;
+          else
+            evidence_saturated <= 1'b1;
           current_burst_events <= event_increment;
         end else if (current_burst_events <= 8'hff - event_increment) begin
           current_burst_events <= current_burst_events + event_increment;
         end else begin
           current_burst_events <= 8'hff;
+          evidence_saturated <= 1'b1;
         end
         age_since_event <= 0;
       end else if (age_since_event != 8'hff) begin
