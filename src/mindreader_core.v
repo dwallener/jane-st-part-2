@@ -56,6 +56,21 @@ module mindreader_core (
   wire timing_violation;
   wire timing_admissible = timing_observed && timing_safe && !timing_violation;
 
+  // The first polyglot-front-end primitive observes all eight anonymous pins,
+  // even though the bounded behavioral learner below still consumes uio[3:0].
+  // There is intentionally no electrical path from this profiler to pad OE.
+  wire [7:0] activity_mask;
+  wire activity_seen;
+  wire observation_ready;
+  wire bus_quiet;
+
+  passive_bus_profiler #(.QUIET_CYCLES(16'd64)) bus_profiler (
+      .clk(clk), .rst_n(rst_n), .observe_enable(enable),
+      .pin_sample(bidir_in), .activity_mask(activity_mask),
+      .activity_seen(activity_seen),
+      .observation_ready(observation_ready), .bus_quiet(bus_quiet)
+  );
+
   wire mismatch_now;
   wire contention_drive_allow;
   wire contention_fault;
@@ -110,7 +125,7 @@ module mindreader_core (
       promotion_rejected,
       contention_fault,
       timing_admissible,
-      timing_observed,
+      bus_quiet,
       drive_enable,
       frozen_model_valid,
       direction_resolved,
@@ -125,7 +140,8 @@ module mindreader_core (
   wire _unused = &{
       1'b0, bidir_in[7:4], evidence_count, supervisor_state, fault_reason,
       transfer_valid, transfer_request, transfer_unknown, data_a_pin,
-      data_b_pin
+      data_b_pin, timing_observed, activity_mask, activity_seen,
+      observation_ready
   };
 
 endmodule

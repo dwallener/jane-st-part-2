@@ -18,6 +18,7 @@ project:
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
     - "mindreader_core.v"
+    - "passive_bus_profiler.v"
     - "template_learner.v"
     - "mindreader_supervisor.v"
     - "spi_physical_learner.v"
@@ -48,7 +49,7 @@ pinout:
   uo[1]: "data direction resolved"
   uo[2]: "frozen model valid"
   uo[3]: "protocol drive enabled"
-  uo[4]: "timing observed"
+  uo[4]: "all-pin bus quiet"
   uo[5]: "timing admissible"
   uo[6]: "contention fault"
   uo[7]: "promotion rejected"
@@ -58,10 +59,10 @@ pinout:
   uio[1]: "anonymous protocol pin 1"
   uio[2]: "anonymous protocol pin 2"
   uio[3]: "anonymous protocol pin 3"
-  uio[4]: "reserved"
-  uio[5]: "reserved"
-  uio[6]: "reserved"
-  uio[7]: "reserved"
+  uio[4]: "anonymous observation pin 4"
+  uio[5]: "anonymous observation pin 5"
+  uio[6]: "anonymous observation pin 6"
+  uio[7]: "anonymous observation pin 7"
 
 # Do not change!
 yaml_version: 6

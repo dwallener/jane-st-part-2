@@ -19,8 +19,10 @@ protocol inference, not a claim to infer every possible protocol.
 
 ## Pin interface
 
-`uio[3:0]` is the anonymous protocol bus. The learner determines which pin is
-select, clock, request data, and response data. `uio[7:4]` are reserved.
+All eight `uio` pins are passively observed for activity and quiet detection.
+The current behavioral learner consumes `uio[3:0]` and determines which of
+those four pins is select, clock, request data, and response data. `uio[7:4]`
+participate in passive electrical observation but are never driven.
 
 Dedicated inputs are control strobes or levels:
 
@@ -43,7 +45,7 @@ Dedicated outputs report:
 | `uo[1]` | request/response direction resolved |
 | `uo[2]` | frozen model valid |
 | `uo[3]` | protocol drive authorized |
-| `uo[4]` | timing evidence observed |
+| `uo[4]` | all eight observed pins quiet for the configured interval |
 | `uo[5]` | timing evidence admissible |
 | `uo[6]` | contention fault latched |
 | `uo[7]` | latest promotion request rejected |
@@ -52,8 +54,10 @@ Dedicated outputs report:
 
 Hold reset low for two clocks, then present one complete frame while `ui[0]` is
 high. Drop `ui[0]`; `uo[0]` asserts when the physical convention is unique.
-Present varied request/response frames with `ui[1]` high until `uo[1]`, `uo[4]`,
-and `uo[5]` assert. Pulse `ui[2]` while holding `ui[3]`; then assert `ui[4]`.
+Present varied request/response frames with `ui[1]` high until `uo[1]` and
+`uo[5]` assert. `uo[4]` independently reports that no observed pin has
+changed for the configured quiet interval. Pulse `ui[2]` while holding `ui[3]`;
+then assert `ui[4]`.
 `uo[2]` and `uo[3]` indicate that the frozen model is executing. A new valid
 request from the learned family should receive a synthesized response on the
 inferred response pin.

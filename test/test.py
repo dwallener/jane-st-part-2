@@ -67,6 +67,17 @@ async def test_autonomous_mindreader_top(dut):
     dut.rst_n.value = 1
     await tick(dut)
 
+    # Quiet is an all-eight-pin claim. Activity on a pin outside the current
+    # four-pin SPI learner must reset the quiet interval without ever driving.
+    await tick(dut, 65)
+    assert int(dut.uo_out.value) & (1 << 4)
+    dut.uio_in.value = 0x88
+    await tick(dut)
+    assert not (int(dut.uo_out.value) & (1 << 4))
+    assert int(dut.uio_oe.value) == 0
+    dut.uio_in.value = 0x08
+    await tick(dut)
+
     # One passive frame identifies select, clock, sampling edge, and data pins.
     dut.ui_in.value = DISCOVER
     await drive_samples(dut, spi_mode1_frame(0xA0, 0x60))
@@ -84,7 +95,6 @@ async def test_autonomous_mindreader_top(dut):
     await tick(dut, 2)
     status = int(dut.uo_out.value)
     assert status & (1 << 1), f"direction unresolved: status=0x{status:02x}"
-    assert status & (1 << 4), f"timing unobserved: status=0x{status:02x}"
     assert status & (1 << 5), f"timing inadmissible: status=0x{status:02x}"
     assert int(dut.uio_oe.value) == 0
 

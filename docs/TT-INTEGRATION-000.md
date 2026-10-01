@@ -15,11 +15,12 @@ The TinyTapeout top now contains the bounded autonomous SPI mindreader itself:
 - stream-causal wire response; and
 - pad-loopback contention detection with immediate output-enable release.
 
-`uio[3:0]` is the anonymous protocol bus. The eight dedicated inputs control
+All eight `uio` pins now feed a passive quiet detector; the bounded SPI learner
+continues to consume `uio[3:0]`. The eight dedicated inputs control
 discovery, learning, promotion, ownership, activation, revocation, fault clear,
 and contradiction injection. The eight dedicated outputs expose physical,
-direction, model, drive, timing, contention, and promotion status. The complete
-mapping is recorded in `info.yaml` and `docs/info.md`.
+direction, model, drive, quiet, timing-admission, contention, and promotion
+status. The complete mapping is recorded in `info.yaml` and `docs/info.md`.
 
 The TinyTapeout cocotb test exercises the complete product boundary. It learns
 from one physical-discovery frame and eight behavioral frames, refuses an
