@@ -10,7 +10,9 @@ executable.
 
 In parallel, an online shared-two-wire learner eliminates directed clock/data
 assignments as traffic arrives and recognizes start, byte/ACK groups, and stop.
-The UART-like and shared-two-wire paths are passive inference surfaces only.
+The UART-like path remains passive. A bounded invented shared-two-wire family
+can now use uniquely decoded address/ACK evidence to propose and perform
+explicitly authorized open-drain interrogation.
 
 The learned model does not gain electrical authority automatically. Promotion
 requires resolved direction, stream-causal response expressions, an observed
@@ -39,7 +41,7 @@ Dedicated inputs are control strobes or levels:
 | `ui[1]` | observe behavioral training frames |
 | `ui[2]` | promote the current learned model |
 | `ui[3]` | grant electrical ownership |
-| `ui[4]` | activate an admitted model |
+| `ui[4]` | activate an admitted SPI model, or launch one admitted interrogation probe on its rising edge |
 | `ui[5]` | revoke emulation |
 | `ui[6]` | clear a released fault |
 | `ui[7]` | passive status mode while `ui[4]=0`; contradiction while `ui[4]=1` |
@@ -92,7 +94,10 @@ status mode and retains its normal activate/contradiction meaning.
 | `19` | `AA` | safety/admission status |
 | `1A` | `CA` | candidate-relative closure mask |
 | `1B` | `EA` | aggregate and per-collector saturation plus incomplete-SPI evidence |
-| `1C`–`1F` | — | reserved (`FF`) |
+| `1C` | `8E` | interrogation resolved, proposal-valid, busy, done, contradiction, timeout, revoked, and passive-evidence-seen |
+| `1D` | `AE` | interrogation candidate count |
+| `1E` | `CE` | proposed seven-bit interrogation request |
+| `1F` | `EE` | resolved-valid, inversion flag, winner bit, and accepted passive-evidence count |
 
 The structural candidate bits are asynchronous single-wire, selected
 synchronous, and shared two-wire clocked. They are intentionally nonexclusive.
@@ -100,6 +105,14 @@ The UART bank likewise retains all compatible framing interpretations. Generic
 framing bits represent two-edge control enclosure, quiet-gap separation, and
 equal event counts across separated bursts. None of these surfaces authorizes
 pin drive.
+
+Interrogation never shares the pads with SPI. A frozen SPI model has priority;
+otherwise a unique unsaturated shared-two-wire interpretation, accepted passive
+evidence, a discriminating proposal, explicit ownership, and a fresh
+activation edge are all required. Each edge launches at most one transaction.
+The interrogation engine only pulls the inferred clock/data pins low or
+releases them. Revocation, reset, clear, contradiction, or `ena=0` releases its
+output-enable path immediately.
 
 Knowledge-state, reason, and next-evidence code values are defined in
 `docs/KNOWLEDGE-RTL-001.md`. Candidate closure is explicitly relative to the

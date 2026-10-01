@@ -44,5 +44,6 @@ module dual_direction_learner (
   assign candidate_masks = complete_ab ? candidates_ab : candidates_ba;
   assign delay_value = complete_ab ? delay_ab : delay_ba;
   assign evidence_count = evidence_ab;
+  wire _unused = &{1'b0, evidence_ba};
 endmodule
 `default_nettype wire

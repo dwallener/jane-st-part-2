@@ -4,6 +4,8 @@
  */
 
 `default_nettype none
+// TinyTapeout requires the wrapper filename to remain project.v.
+/* verilator lint_off DECLFILENAME */
 module tt_um_dwallener_mindreader (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
@@ -39,5 +41,6 @@ module tt_um_dwallener_mindreader (
   wire _unused = &{1'b0};
 
 endmodule
+/* verilator lint_on DECLFILENAME */
 
 `default_nettype wire

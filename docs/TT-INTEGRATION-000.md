@@ -63,7 +63,7 @@ clocks after capture. It synthesizes to 2,895 cells for the UART block and
 space. Yosys reports zero structural problems and no inferred latches. A new
 CMOS5L backend run is still required before making any routed fit claim.
 
-The current local regression passes 121 experiment/component tests, 84
+The current local regression passes 128 experiment/component tests, 266
 parameterized/randomized subtests, and all six TinyTapeout top-level cocotb
 scenarios. The
 second top-level scenario identifies a normal-idle 8N1-compatible trace on
@@ -114,3 +114,28 @@ fresh GDS run before its area and timing are claimed.
 The current knowledge-report revision synthesizes locally to 21,414 generic
 cells, including 59 cells for the combinational reporter itself. This is a
 generic synthesis comparison, not a routed-area projection.
+
+The interrogation work remains deliberately outside that top-level count. Its
+adaptive invented-protocol demonstrator synthesizes standalone to 651 generic
+cells, including the open-drain wire engine and a sequential 128-cycle
+information-gain search over fourteen hypotheses. Strict Verilator lint and
+Yosys structural checks are clean. This number is not additive proof of final
+fit; a fresh backend run is required after any top-level integration.
+
+A standalone passive-to-active bridge now connects raw anonymous pin samples
+through the existing shared-two-wire decoder to that adaptive learner. Its
+end-to-end test discovers the pin roles and decoded evidence without scorer
+injection, then safely resolves all seven hidden target variants. Synthesizing
+the bridge with a second copy of the parallel shared-two-wire frontend totals
+9,747 generic cells; the eventual top integration must reuse the frontend
+already present in `mindreader_core.v` rather than pay that duplication.
+
+The integrated revision now reuses that existing frontend and adds exclusive
+SPI/interrogation pad arbitration, one-probe-per-activation control, four
+status pages, fault-clear recapture semantics, and the adaptive open-drain
+engine. It synthesizes locally to 22,186 generic cells, 772 above the 21,414
+cell knowledge-report revision. The TinyTapeout-boundary RTL test starts from
+raw anonymous traffic, rejects unauthorized activation, resolves the hidden
+behavior in three probes, and verifies low-or-release drive, inferred-pin
+confinement, combinational revoke, clear-with-recapture, and `ena=0` release.
+A new CMOS5L backend run is required before claiming routed area or timing.

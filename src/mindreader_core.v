@@ -35,8 +35,8 @@ module mindreader_core (
   wire contradiction = enable && dedicated_in[7] && dedicated_in[4];
 
   wire [7:0] protocol_in = bidir_in;
-  wire [7:0] raw_protocol_out;
-  wire [7:0] raw_protocol_oe;
+  wire [7:0] spi_protocol_out;
+  wire [7:0] spi_protocol_oe;
   wire physical_complete;
   wire direction_resolved;
   wire frozen_model_valid;
@@ -225,8 +225,8 @@ module mindreader_core (
       .ownership_granted(ownership_granted), .activate(activate),
       .revoke(revoke), .contradiction(contradiction),
       .contention(contention), .clear_fault(clear_fault),
-      .pin_in(protocol_in), .pin_out(raw_protocol_out),
-      .pin_oe(raw_protocol_oe), .physical_complete(physical_complete),
+      .pin_in(protocol_in), .pin_out(spi_protocol_out),
+      .pin_oe(spi_protocol_oe), .physical_complete(physical_complete),
       .direction_resolved(direction_resolved),
       .frozen_model_valid(frozen_model_valid), .drive_enable(drive_enable),
       .evidence_count(evidence_count), .supervisor_state(supervisor_state),
@@ -256,8 +256,8 @@ module mindreader_core (
   pin_contention_monitor #(.WIDTH(8)) contention_monitor (
       .clk(clk), .rst_n(rst_n), .clear_fault(clear_fault),
       .monitor_enable(drive_enable), .drive_requested(drive_enable),
-      .pin_in(protocol_in), .pin_out(raw_protocol_out),
-      .pin_oe(raw_protocol_oe), .mismatch_now(mismatch_now),
+      .pin_in(protocol_in), .pin_out(spi_protocol_out),
+      .pin_oe(spi_protocol_oe), .mismatch_now(mismatch_now),
       .drive_allow(contention_drive_allow),
       .contention_fault(contention_fault)
   );
@@ -313,6 +313,90 @@ module mindreader_core (
       .knowledge_state(knowledge_state), .reason_code(knowledge_reason),
       .next_evidence_code(next_evidence), .safety_status(knowledge_safety)
   );
+  reg activate_previous;
+  reg i2c_ready_seen;
+  reg [2:0] interrogation_evidence_count;
+  wire activate_rise = activate && !activate_previous;
+  wire interrogation_passive_accepted = i2c_ready && !i2c_ready_seen &&
+      i2c_candidate_valid && !i2c_candidate_ambiguous &&
+      (i2c_byte_count != 0) && !i2c_evidence_saturated;
+
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      activate_previous <= 1'b0;
+      i2c_ready_seen <= 1'b0;
+      interrogation_evidence_count <= 0;
+    end else if (clear_fault) begin
+      activate_previous <= 1'b0;
+      // The current ready level is stale evidence after a clear. Mark it as
+      // consumed so only a new low-to-high completion can reach the learner.
+      i2c_ready_seen <= i2c_ready;
+      interrogation_evidence_count <= 0;
+    end else begin
+      activate_previous <= activate;
+      if (!i2c_ready)
+        i2c_ready_seen <= 1'b0;
+      else
+        i2c_ready_seen <= 1'b1;
+      if (interrogation_passive_accepted &&
+          interrogation_evidence_count != 3'd7)
+        interrogation_evidence_count <= interrogation_evidence_count + 1'b1;
+    end
+  end
+
+  wire [7:0] interrogation_out;
+  wire [7:0] interrogation_oe;
+  wire interrogation_proposal_valid;
+  wire [6:0] interrogation_proposal_request;
+  wire interrogation_busy;
+  wire interrogation_done;
+  wire interrogation_resolved;
+  wire interrogation_contradiction;
+  wire interrogation_timed_out;
+  wire interrogation_revoked;
+  wire [4:0] interrogation_candidate_count;
+  wire interrogation_winner_invert;
+  wire [2:0] interrogation_winner_bit;
+  wire interrogation_roles_admitted = i2c_candidate_valid &&
+      !i2c_candidate_ambiguous && !i2c_evidence_saturated;
+  wire interrogation_eligible = (interrogation_evidence_count != 0) &&
+      interrogation_roles_admitted && interrogation_proposal_valid &&
+      (interrogation_candidate_count > 1) && !frozen_model_valid &&
+      !interrogation_contradiction && !interrogation_timed_out &&
+      !interrogation_revoked;
+  wire interrogation_authorize = enable && ownership_granted &&
+      interrogation_eligible && !revoke && !contradiction;
+  wire interrogation_start = activate_rise && interrogation_authorize;
+  wire interrogation_rst_n = rst_n && !clear_fault;
+
+  adaptive_open_drain_interrogator adaptive_interrogator (
+      .clk(clk), .rst_n(interrogation_rst_n),
+      .passive_observation_valid(interrogation_passive_accepted),
+      .passive_request(i2c_first_byte[7:1]),
+      .passive_ack(!i2c_ack_bits[0]),
+      .start(interrogation_start), .authorize(interrogation_authorize),
+      .abort_request(revoke || contradiction || !enable || frozen_model_valid),
+      .clock_pin(i2c_clock_pin), .data_pin(i2c_data_pin),
+      .pin_in(protocol_in), .pin_out(interrogation_out),
+      .pin_oe(interrogation_oe),
+      .proposal_valid(interrogation_proposal_valid),
+      .proposal_request(interrogation_proposal_request),
+      .busy(interrogation_busy), .probe_done(interrogation_done),
+      .resolved(interrogation_resolved),
+      .contradiction(interrogation_contradiction),
+      .timed_out(interrogation_timed_out),
+      .revoked(interrogation_revoked),
+      .candidate_count(interrogation_candidate_count),
+      .winner_invert(interrogation_winner_invert),
+      .winner_bit(interrogation_winner_bit)
+  );
+
+  wire spi_pad_owner = frozen_model_valid;
+  wire [7:0] selected_protocol_out = spi_pad_owner
+      ? spi_protocol_out : interrogation_out;
+  wire [7:0] selected_protocol_oe = spi_pad_owner
+      ? (spi_protocol_oe & {8{contention_drive_allow}}) : interrogation_oe;
+
   reg [7:0] paged_status;
   always @* begin
     case (status_page)
@@ -361,20 +445,34 @@ module mindreader_core (
                              generic_evidence_saturated,
                              physical_evidence_saturated,
                              spi_frame_incomplete};
+      5'h1c: paged_status = {interrogation_resolved,
+                             interrogation_proposal_valid,
+                             interrogation_busy, interrogation_done,
+                             interrogation_contradiction,
+                             interrogation_timed_out,
+                             interrogation_revoked,
+                             (interrogation_evidence_count != 0)};
+      5'h1d: paged_status = {3'b000, interrogation_candidate_count};
+      5'h1e: paged_status = {1'b0, interrogation_proposal_request};
+      5'h1f: paged_status = {interrogation_resolved,
+                             interrogation_winner_invert,
+                             interrogation_winner_bit,
+                             interrogation_evidence_count};
       default: paged_status = 8'hff;
     endcase
   end
   assign dedicated_out = status_mode ? paged_status : normal_status;
-  assign bidir_out = raw_protocol_out;
-  assign bidir_oe = raw_protocol_oe & {8{enable && contention_drive_allow}};
+  assign bidir_out = selected_protocol_out;
+  assign bidir_oe = selected_protocol_oe & {8{enable}};
 
   wire _unused = &{
       1'b0, evidence_count, supervisor_state, fault_reason,
       transfer_valid, transfer_request, transfer_unknown, data_a_pin,
-      data_b_pin, timing_observed, activity_mask, activity_seen,
+      data_b_pin, timing_observed, mismatch_now, activity_mask, activity_seen,
       observation_ready, async_candidate_mask, select_candidate_mask,
-      i2c_clock_pin, i2c_data_pin, i2c_first_byte, i2c_second_byte,
-      i2c_ack_bits, i2c_byte_count, i2c_open_drain_required
+      i2c_candidate_count[5], i2c_clock_pin, i2c_data_pin,
+      i2c_first_byte[0], i2c_second_byte, i2c_ack_bits[1],
+      i2c_open_drain_required, generic_burst_count[3:2]
   };
 
 endmodule

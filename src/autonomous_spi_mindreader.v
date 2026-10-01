@@ -146,7 +146,7 @@ module autonomous_spi_mindreader (
   assign frame_incomplete = frame_incomplete_latched;
   wire _unused_physical = &{1'b0, physical_ready, physical_candidates,
                             physical_data_mask, physical_data_candidates,
-                            live_delay, passive,
+                            live_delay, live_stream_causal, passive,
                             model_admitted};
 endmodule
 `default_nettype wire

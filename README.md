@@ -4,9 +4,10 @@
 > digital peripheral, explains what it knows, and can impersonate the original
 > device.
 
-**Status:** autonomous SPI tapeout candidate and passive polyglot frontend
-integrated. The polyglot revision completed the CMOS5L backend; the subsequent
-lint cleanup and knowledge-report extension require a final backend rerun.
+**Status:** autonomous SPI tapeout candidate, passive polyglot frontend, and
+bounded adaptive open-drain interrogation integrated. The earlier polyglot
+revision completed the CMOS5L backend; the newer knowledge and interrogation
+logic requires a final backend rerun.
 
 This is a prospective entry for Jane Street's
 [Protocol Emulator ASIC Competition](https://blog.janestreet.com/protocol-emulator-asic-competition/).
@@ -64,12 +65,15 @@ authorized. See
 [`docs/KNOWLEDGE-RTL-001.md`](docs/KNOWLEDGE-RTL-001.md). Its recommendations
 are advisory and cannot assert a protocol-pin output enable.
 
-The first active-interrogation simulation is intentionally isolated from test
-truth. A black-box target randomly selects one of two open-drain address
-hypotheses; a synthesizable low-or-release probe observes ACK/NACK and retains
-the correct candidate without receiving the selection. This is a standalone
-kernel, not yet a top-level capability. See
-[`docs/INTERROGATION-SIM-001.md`](docs/INTERROGATION-SIM-001.md).
+Active interrogation is intentionally isolated from test truth. A black-box
+target hides one of several invented open-drain behaviors; the synthesizable
+learner derives candidates from the integrated passive shared-two-wire
+frontend, chooses requests that divide them, and revises the candidate set from
+wire-level ACK/NACK evidence. Explicit ownership and a fresh activation edge
+authorize one low-or-release probe. The same closed loop now passes through the
+TinyTapeout top without receiving the hidden selection. See
+[`docs/INTERROGATION-SIM-001.md`](docs/INTERROGATION-SIM-001.md) and
+[`docs/INTERROGATION-INTEGRATION-001.md`](docs/INTERROGATION-INTEGRATION-001.md).
 
 This is not an attempt to recover human meaning such as "this byte is
 temperature." It is an attempt to learn an executable, timed behavioral model.

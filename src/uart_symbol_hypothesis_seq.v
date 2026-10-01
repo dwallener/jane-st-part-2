@@ -8,6 +8,7 @@
 // Capture maintains period hypotheses concurrently. After capture, one shared
 // evaluator scans the 450 period/width/parity/stop combinations in 450 clocks.
 // The block never produces output data or output enable.
+/* verilator lint_off DECLFILENAME */
 module uart_symbol_hypothesis (
     input  wire        clk,
     input  wire        rst_n,
@@ -260,5 +261,6 @@ module uart_symbol_hypothesis (
   end
 
 endmodule
+/* verilator lint_on DECLFILENAME */
 
 `default_nettype wire

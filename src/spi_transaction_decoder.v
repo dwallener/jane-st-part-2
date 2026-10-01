@@ -14,8 +14,8 @@ module spi_transaction_decoder (
   reg previous_selected;
   reg [3:0] bit_count;
   reg overlong;
-  reg [7:0] shift_a;
-  reg [7:0] shift_b;
+  reg [6:0] shift_a;
+  reg [6:0] shift_b;
   wire selected = pin_sample[select_pin] == select_active_level;
   wire leading = previous_sample[clock_pin] == clock_idle_level &&
                  pin_sample[clock_pin] != clock_idle_level;
@@ -57,8 +57,8 @@ module spi_transaction_decoder (
         overlong <= 0;
       end else if (sample_now) begin
         if (bit_count < 8) begin
-          shift_a <= {shift_a[6:0], pin_sample[data_a_pin]};
-          shift_b <= {shift_b[6:0], pin_sample[data_b_pin]};
+          shift_a <= {shift_a[5:0], pin_sample[data_a_pin]};
+          shift_b <= {shift_b[5:0], pin_sample[data_b_pin]};
           bit_count <= bit_count + 1'b1;
         end else overlong <= 1;
         if (bit_count == 7) begin
