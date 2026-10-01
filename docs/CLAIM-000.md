@@ -124,6 +124,10 @@ step, not the overall project.
    sampling edge, and bit order. Default and permuted fixtures uniquely recover
    every role and the sampling edge; only the known bit-reversal symmetry
    remains. See `PHYSICAL-000.md`.
+10. **Width inference — implemented with fixed framing boundaries.** Eight-
+    and six-bit fixtures recover their exact request/response phase widths.
+    Every divisor remains an equivalent symbol granularity, separating
+    observable bit count from unobservable word naming. See `WIDTH-000.md`.
 
 Each step must retain the replay control, an unseen valid exchange, an unknown
 request, and an insufficient-evidence case. A step does not pass merely because

@@ -20,6 +20,7 @@ python3 experiments/minimum_mindreader/run_active_experiment.py
 python3 experiments/minimum_mindreader/run_protocol_program.py
 python3 experiments/minimum_mindreader/run_framing_experiment.py
 python3 experiments/minimum_mindreader/run_role_experiment.py
+python3 experiments/minimum_mindreader/run_width_experiment.py
 ```
 
 Run the tests:
@@ -57,3 +58,8 @@ The pin-role extension evaluates all 48 assignments of three input roles, two
 output roles, sampling edge, and bit order. It recovers both default and
 permuted wiring from corpus-wide behavioral consistency, again retaining only
 the two equivalent bit-order interpretations.
+
+The width experiment observes exact request and response bit counts from the
+framed phases, then retains every divisor as a compatible symbol granularity.
+It covers both eight-bit and six-bit fixtures to avoid baking byte assumptions
+into the protocol grammar. See `docs/WIDTH-000.md`.

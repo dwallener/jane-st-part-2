@@ -26,11 +26,11 @@ class BitOrder(Enum):
     LSB_FIRST = "lsb_first"
 
 
-def _bits(value: int, bit_order: BitOrder) -> tuple[int, ...]:
+def _bits(value: int, bit_order: BitOrder, width: int) -> tuple[int, ...]:
     indices = (
-        reversed(range(BYTE_BITS))
+        reversed(range(width))
         if bit_order is BitOrder.MSB_FIRST
-        else range(BYTE_BITS)
+        else range(width)
     )
     return tuple((value >> bit) & 1 for bit in indices)
 
@@ -87,11 +87,19 @@ def encode_variant(
     transaction: Transaction,
     sampling_edge: SamplingEdge,
     bit_order: BitOrder,
+    frame_width: int = BYTE_BITS,
 ) -> Trace:
     """Encode an unannotated trace with data changing on non-sampling edges."""
 
-    request_bits = _bits(transaction.request, bit_order)
-    response_bits = _bits(transaction.response, bit_order)
+    if not 1 <= frame_width <= BYTE_BITS:
+        raise ValueError("frame_width must be in the range 1..8")
+    if transaction.request >= 1 << frame_width:
+        raise ValueError("request does not fit in frame_width")
+    if transaction.response >= 1 << frame_width:
+        raise ValueError("response does not fit in frame_width")
+
+    request_bits = _bits(transaction.request, bit_order, frame_width)
+    response_bits = _bits(transaction.response, bit_order, frame_width)
     builder = TraceBuilder()
 
     builder.wait(1)

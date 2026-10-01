@@ -94,6 +94,8 @@ alone; they must decode the entire corpus into a complete learned model.
 
 ## Next bounded question
 
-Symbol width remains supplied. Removing it next should distinguish the directly
-observable number of bits in a selected phase from the generally unobservable
-choice to name those bits as one word, two nibbles, or eight one-bit symbols.
+`WIDTH-000.md` removes the fixed-width assumption next. It uniquely observes
+the number of sampled bits inside each framed phase, but retains every divisor
+as a compatible symbol granularity. The wire determines frame width; it does
+not determine whether eight bits should be named one byte, two nibbles, or
+eight one-bit symbols.
