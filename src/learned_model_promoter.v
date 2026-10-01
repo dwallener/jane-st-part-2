@@ -6,12 +6,12 @@ module learned_model_promoter (
     input wire clk, input wire rst_n, input wire promote, input wire invalidate,
     input wire direction_resolved, input wire timing_safe,
     input wire ownership_authorized,
-    input wire [1:0] live_request_pin, input wire [1:0] live_response_pin,
+    input wire [2:0] live_request_pin, input wire [2:0] live_response_pin,
     input wire [7:0] live_request_mask, input wire [7:0] live_request_value,
     input wire [143:0] live_candidate_masks,
     output reg frozen_valid, output reg promotion_rejected,
     output wire live_stream_causal,
-    output reg [1:0] frozen_request_pin, output reg [1:0] frozen_response_pin,
+    output reg [2:0] frozen_request_pin, output reg [2:0] frozen_response_pin,
     output reg [7:0] frozen_request_mask, output reg [7:0] frozen_request_value,
     output reg [143:0] frozen_candidate_masks
 );

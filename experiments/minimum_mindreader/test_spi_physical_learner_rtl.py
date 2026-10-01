@@ -36,7 +36,7 @@ class SpiPhysicalLearnerRtlTest(unittest.TestCase):
                         (1, 2),
                     )
                 )
-        permutation = (2, 0, 3, 1)
+        permutation = (6, 1, 7, 4)
         case = make_spi_case(3, True)
         fixtures.append(
             (
@@ -54,8 +54,8 @@ class SpiPhysicalLearnerRtlTest(unittest.TestCase):
             body.extend(
                 [
                     "rst_n = 0; capture_enable = 0; tick();",
-                    f"pin_sample = 4'h{samples[0]:x}; rst_n = 1; capture_enable = 1; tick();",
-                    *(f"pin_sample = 4'h{sample:x}; tick();" for sample in samples[1:]),
+                    f"pin_sample = 8'h{samples[0]:x}; rst_n = 1; capture_enable = 1; tick();",
+                    *(f"pin_sample = 8'h{sample:x}; tick();" for sample in samples[1:]),
                     "capture_enable = 0; tick(); #1;",
                     f'if (!physical_complete || candidate_count != 1) fail("{name}: unresolved");',
                     f'if (select_pin != {select_pin} || clock_pin != {clock_pin}) fail("{name}: roles");',
@@ -65,12 +65,36 @@ class SpiPhysicalLearnerRtlTest(unittest.TestCase):
                 ]
             )
 
+        ambiguous = tuple(sample & ~(1 << 2) for sample in make_spi_case(1, True).waveform.samples)
+        body.extend(
+            [
+                "rst_n = 0; capture_enable = 0; tick();",
+                f"pin_sample = 8'h{ambiguous[0]:x}; rst_n = 1; capture_enable = 1; tick();",
+                *(f"pin_sample = 8'h{sample:x}; tick();" for sample in ambiguous[1:]),
+                "capture_enable = 0; tick(); #1;",
+                'if (!ready || physical_complete || data_candidate_count != 1) fail("constant data ambiguity");',
+            ]
+        )
+
+        noisy = tuple(sample ^ (((index & 1) << 5))
+                      for index, sample in enumerate(make_spi_case(1, True).waveform.samples))
+        body.extend(
+            [
+                "rst_n = 0; capture_enable = 0; tick();",
+                f"pin_sample = 8'h{noisy[0]:x}; rst_n = 1; capture_enable = 1; tick();",
+                *(f"pin_sample = 8'h{sample:x}; tick();" for sample in noisy[1:]),
+                "capture_enable = 0; tick(); #1;",
+                'if (!ready || physical_complete || data_candidate_count < 3) fail("extra active pin ambiguity");',
+            ]
+        )
+
         testbench = """
 `timescale 1ns/1ps
 module tb;
-reg clk=0, rst_n=0, capture_enable=0; reg [3:0] pin_sample=0;
-wire ready, physical_complete; wire [1:0] select_pin,clock_pin,data_a_pin,data_b_pin;
-wire select_active_level,clock_idle_level,sample_trailing; wire [4:0] candidate_count;
+reg clk=0, rst_n=0, capture_enable=0; reg [7:0] pin_sample=0;
+wire ready, physical_complete; wire [2:0] select_pin,clock_pin,data_a_pin,data_b_pin;
+wire select_active_level,clock_idle_level,sample_trailing; wire [5:0] candidate_count;
+wire [7:0] data_candidate_mask; wire [3:0] data_candidate_count;
 always #5 clk=~clk;
 spi_physical_learner dut(.*);
 task tick; begin @(posedge clk); #1; end endtask

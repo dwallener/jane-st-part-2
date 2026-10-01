@@ -4,15 +4,15 @@
 
 module spi_transaction_decoder (
     input wire clk, input wire rst_n, input wire enable,
-    input wire [3:0] pin_sample,
-    input wire [1:0] select_pin, input wire [1:0] clock_pin,
-    input wire [1:0] data_a_pin, input wire [1:0] data_b_pin,
+    input wire [7:0] pin_sample,
+    input wire [2:0] select_pin, input wire [2:0] clock_pin,
+    input wire [2:0] data_a_pin, input wire [2:0] data_b_pin,
     input wire select_active_level, input wire clock_idle_level,
     input wire sample_trailing,
     output reg transaction_valid, output reg transaction_aborted,
     output reg [7:0] data_a_word, output reg [7:0] data_b_word
 );
-  reg [3:0] previous_sample;
+  reg [7:0] previous_sample;
   reg previous_selected;
   reg [3:0] bit_count;
   reg overlong;

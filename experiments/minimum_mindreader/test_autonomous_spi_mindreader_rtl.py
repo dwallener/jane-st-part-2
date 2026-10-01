@@ -25,15 +25,15 @@ class AutonomousSpiMindreaderRtlTest(unittest.TestCase):
         held_out = make_spi_case(1, True, request=0xA7, response=0x63)
 
         lines: list[str] = [
-            "pin_in = 4'h8; discover_enable = 1; passive_tick();",
-            *(f"pin_in = 4'h{sample:x}; passive_tick();" for sample in discovery.waveform.samples[1:]),
+            "pin_in = 8'h8; discover_enable = 1; passive_tick();",
+            *(f"pin_in = 8'h{sample:x}; passive_tick();" for sample in discovery.waveform.samples[1:]),
             "discover_enable = 0; passive_tick();",
             'if (!physical_complete) fail("physical inference did not complete");',
             "learn_enable = 1;",
         ]
         for case in training:
             lines.extend(
-                f"pin_in = 4'h{sample:x}; passive_tick();"
+                f"pin_in = 8'h{sample:x}; passive_tick();"
                 for sample in case.waveform.samples
             )
             lines.append("passive_tick();")
@@ -54,14 +54,14 @@ class AutonomousSpiMindreaderRtlTest(unittest.TestCase):
 
         previous = held_out.waveform.samples[0]
         sampled = 0
-        lines.append(f"pin_in = 4'h{previous & ~(1 << 2):x}; tick();")
+        lines.append(f"pin_in = 8'h{previous & ~(1 << 2):x}; tick();")
         for sample in held_out.waveform.samples[1:]:
             wire_sample = sample & ~(1 << 2)
             previous_clock = previous & 1
             clock = sample & 1
             selected = not ((sample >> 3) & 1)
             sampling = selected and previous_clock == 1 and clock == 0
-            lines.append(f"pin_in = 4'h{wire_sample:x}; #1;")
+            lines.append(f"pin_in = 8'h{wire_sample:x}; #1;")
             if sampling:
                 expected_bit = (0x63 >> (7 - sampled)) & 1
                 lines.append(
@@ -85,12 +85,12 @@ class AutonomousSpiMindreaderRtlTest(unittest.TestCase):
 module tb;
 reg clk=0,rst_n=0,discover_enable=0,learn_enable=0,promote=0,timing_safe=1;
 reg ownership_granted=0,activate=0,revoke=0,contradiction=0,contention=0,clear_fault=0;
-reg [3:0] pin_in=4'h8;
-wire [3:0] pin_out,pin_oe; wire physical_complete,direction_resolved;
+reg [7:0] pin_in=8'h8;
+wire [7:0] pin_out,pin_oe; wire physical_complete,direction_resolved;
 wire frozen_model_valid,drive_enable; wire [7:0] evidence_count;
 wire [2:0] supervisor_state,fault_reason; wire promotion_rejected;
 wire transfer_valid; wire [7:0] transfer_request; wire transfer_unknown;
-wire [1:0] inferred_select_pin,inferred_clock_pin,inferred_data_a_pin,inferred_data_b_pin;
+wire [2:0] inferred_select_pin,inferred_clock_pin,inferred_data_a_pin,inferred_data_b_pin;
 wire inferred_select_active_level,inferred_clock_idle_level,inferred_sample_trailing;
 always #5 clk=~clk;
 autonomous_spi_mindreader dut(.*);

@@ -8,23 +8,25 @@ module autonomous_spi_mindreader (
     input wire promote, input wire timing_safe,
     input wire ownership_granted, input wire activate, input wire revoke,
     input wire contradiction, input wire contention, input wire clear_fault,
-    input wire [3:0] pin_in,
-    output wire [3:0] pin_out, output wire [3:0] pin_oe,
+    input wire [7:0] pin_in,
+    output wire [7:0] pin_out, output wire [7:0] pin_oe,
     output wire physical_complete, output wire direction_resolved,
     output wire frozen_model_valid, output wire drive_enable,
     output wire [7:0] evidence_count, output wire [2:0] supervisor_state,
     output wire [2:0] fault_reason, output wire promotion_rejected,
     output wire transfer_valid, output wire [7:0] transfer_request,
     output wire transfer_unknown,
-    output wire [1:0] inferred_select_pin, inferred_clock_pin,
-    output wire [1:0] inferred_data_a_pin, inferred_data_b_pin,
+    output wire [2:0] inferred_select_pin, inferred_clock_pin,
+    output wire [2:0] inferred_data_a_pin, inferred_data_b_pin,
     output wire inferred_select_active_level, inferred_clock_idle_level,
     output wire inferred_sample_trailing
 );
   wire physical_ready;
-  wire [1:0] select_pin, clock_pin, data_a_pin, data_b_pin;
+  wire [2:0] select_pin, clock_pin, data_a_pin, data_b_pin;
   wire select_active_level, clock_idle_level, sample_trailing;
-  wire [4:0] physical_candidates;
+  wire [5:0] physical_candidates;
+  wire [7:0] physical_data_mask;
+  wire [3:0] physical_data_candidates;
   spi_physical_learner physical (
       .clk(clk), .rst_n(rst_n), .capture_enable(discover_enable),
       .pin_sample(pin_in), .ready(physical_ready),
@@ -32,7 +34,9 @@ module autonomous_spi_mindreader (
       .clock_pin(clock_pin), .data_a_pin(data_a_pin), .data_b_pin(data_b_pin),
       .select_active_level(select_active_level),
       .clock_idle_level(clock_idle_level), .sample_trailing(sample_trailing),
-      .candidate_count(physical_candidates)
+      .candidate_count(physical_candidates),
+      .data_candidate_mask(physical_data_mask),
+      .data_candidate_count(physical_data_candidates)
   );
 
   wire observation_valid, observation_aborted;
@@ -48,7 +52,7 @@ module autonomous_spi_mindreader (
       .data_a_word(data_a_word), .data_b_word(data_b_word)
   );
 
-  wire [1:0] live_request_pin, live_response_pin;
+  wire [2:0] live_request_pin, live_response_pin;
   wire [7:0] live_request_mask, live_request_value;
   wire [143:0] live_candidate_masks;
   wire [15:0] live_delay;
@@ -64,7 +68,7 @@ module autonomous_spi_mindreader (
   );
 
   wire live_stream_causal;
-  wire [1:0] frozen_request_pin, frozen_response_pin;
+  wire [2:0] frozen_request_pin, frozen_response_pin;
   wire [7:0] frozen_request_mask, frozen_request_value;
   wire [143:0] frozen_candidate_masks;
   learned_model_promoter promoter (
@@ -120,5 +124,9 @@ module autonomous_spi_mindreader (
   assign inferred_select_active_level = select_active_level;
   assign inferred_clock_idle_level = clock_idle_level;
   assign inferred_sample_trailing = sample_trailing;
+  wire _unused_physical = &{1'b0, physical_ready, physical_candidates,
+                            physical_data_mask, physical_data_candidates,
+                            observation_aborted, live_delay, passive,
+                            model_admitted};
 endmodule
 `default_nettype wire

@@ -1,9 +1,9 @@
 `default_nettype none
-module spi_timing_guard(input wire clk,rst_n,observe_enable,input wire [3:0] pin_sample,
- input wire [1:0] select_pin,clock_pin,input wire select_active_level,clock_idle_level,sample_trailing,
+module spi_timing_guard(input wire clk,rst_n,observe_enable,input wire [7:0] pin_sample,
+ input wire [2:0] select_pin,clock_pin,input wire select_active_level,clock_idle_level,sample_trailing,
  input wire [7:0] minimum_half_ticks,minimum_select_ticks,
  output reg timing_observed,timing_safe,timing_violation);
-reg [3:0] previous; reg previous_selected; reg [7:0] half_ticks,select_ticks;
+reg [7:0] previous; reg previous_selected; reg [7:0] half_ticks,select_ticks;
 reg saw_clock,saw_sample,frame_safe;
 wire selected=pin_sample[select_pin]==select_active_level;
 wire leading=previous[clock_pin]==clock_idle_level&&pin_sample[clock_pin]!=clock_idle_level;

@@ -4,8 +4,9 @@
 > digital peripheral, explains what it knows, and can impersonate the original
 > device.
 
-**Status:** autonomous SPI tapeout candidate integrated; CMOS5L physical
-closure pending.
+**Status:** autonomous SPI tapeout candidate integrated; a four-wire link may
+occupy any four of the eight bidirectional pins. The previous integrated
+revision completed the CMOS5L backend; the widened revision awaits rerun.
 
 This is a prospective entry for Jane Street's
 [Protocol Emulator ASIC Competition](https://blog.janestreet.com/protocol-emulator-asic-competition/).
@@ -36,6 +37,14 @@ The intended experience is:
    the original device.
 4. **Emulate** the learned behavior with deterministic cycle-level timing.
 5. **Explain** which behavior was observed, generalized, or remains unknown.
+
+The implementation taxonomy is structural rather than brand-based: shared pin
+evidence routes concurrently toward asynchronous single-wire, selected
+synchronous, and shared two-wire hypotheses. See
+[`docs/TAXONOMY-STATUS-001.md`](docs/TAXONOMY-STATUS-001.md). The integrated
+UART candidate bank retains pin, polarity, period, width, parity, and stop-bit
+equivalence without driving; see
+[`docs/UART-RTL-001.md`](docs/UART-RTL-001.md).
 
 This is not an attempt to recover human meaning such as "this byte is
 temperature." It is an attempt to learn an executable, timed behavioral model.

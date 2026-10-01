@@ -19,20 +19,30 @@ constraints are known and ownership is explicitly granted.
 - [x] **E1 Eight-pin quiet profiler.** Observe every bidirectional pin and
   declare quiet only after a complete programmable interval without any
   transition. Observation never changes an output-enable signal.
-- [ ] **E2 Electrical-role evidence.** Retain per-pin activity, idle level,
-  transition count, edge correlation, and candidate clock/control/data roles
-  without prematurely choosing one interpretation.
-- [ ] **E3 Inspectable evidence.** Make the activity mask, quiet state, evidence
-  age, and overflow/insufficiency conditions available through a bounded status
-  interface.
+- [x] **E2 Bounded SPI electrical-role evidence.** Retain per-pin activity,
+  baseline level, transition count, edge correlation, and candidate
+  select/clock/data roles across all eight pins. A four-wire SPI link may
+  occupy any subset; constant data or extra active pins remain unresolved.
+- [x] **E3 Inspectable structural evidence.** Passive status pages expose
+  the activity mask, quiet age, candidate classes, ambiguity/insufficiency, and
+  clock-candidate mask without changing output enable.
+- [ ] **E4 Trace-loss evidence.** Connect edge-capture overflow and provenance
+  loss to the same externally visible refusal surface.
 
 ## F. Integrate passive protocol families
 
-- [ ] **F1 Concurrent hypotheses.** Feed shared edge evidence to bounded SPI,
-  UART, I2C, and generic-framing candidates.
-- [ ] **F2 Family classification.** Report surviving families and genuine
+- [x] **F1 Structural hypothesis routing.** Feed one shared eight-pin evidence
+  window to nonexclusive asynchronous-single-wire, selected-synchronous, and
+  shared-two-wire candidate routes. Canonical SPI, UART, and I2C traces plus a
+  quiet negative control reach their expected structural routes.
+- [ ] **F2 Concurrent symbol hypotheses.** Feed routed evidence into bounded
+  SPI, UART, I2C, and generic-framing symbol/frame candidates. The first
+  wire-facing UART bank is integrated: it concurrently retains compatible
+  pin, idle polarity, bit-period, width, parity, and stop-count hypotheses.
+  I2C and generic framing remain.
+- [ ] **F3 Family classification.** Report surviving families and genuine
   equivalence rather than forcing a single label.
-- [ ] **F3 End-to-end held-out tests.** Exercise each integrated family through
+- [ ] **F4 End-to-end held-out tests.** Exercise each integrated family through
   the TinyTapeout top with negative controls and malformed traffic.
 
 ## G. Propose before driving
@@ -58,8 +68,11 @@ constraints are known and ownership is explicitly granted.
 
 ## Current implementation boundary
 
-The integrated ASIC top still performs autonomous behavioral learning only for
-a bounded four-pin SPI-like family. UART and I2C frontends and the abstract
-active-probe kernel exist in the broader repository evidence, but they are not
-yet an eight-pin wire-facing polyglot machine. This checkpoint closes only when
-the integrated top, tests, and documentation agree on that boundary.
+The integrated ASIC top performs autonomous behavioral learning for a bounded
+four-wire SPI-like family appearing on an unknown subset of the eight pins. A
+passive UART-like bank now observes an unknown single pin and reports every
+compatible bounded symbol interpretation, but it does not yet learn behavior
+or transmit. I2C remains outside the eight-pin wire-facing top. The abstract
+active-probe kernel exists only in the broader repository evidence. This
+checkpoint closes only when the integrated top, tests, and documentation agree
+on that boundary.

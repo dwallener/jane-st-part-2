@@ -18,7 +18,8 @@ module passive_bus_profiler #(
     output reg  [7:0] activity_mask,
     output wire       activity_seen,
     output wire       observation_ready,
-    output wire       bus_quiet
+    output wire       bus_quiet,
+    output wire [7:0] quiet_age
 );
 
   reg [7:0] previous_sample;
@@ -31,6 +32,7 @@ module passive_bus_profiler #(
   assign activity_seen = |activity_mask;
   assign observation_ready = initialized;
   assign bus_quiet = initialized && (stable_cycles >= QUIET_CYCLES);
+  assign quiet_age = stable_cycles[7:0];
 
   always @(posedge clk) begin
     if (!rst_n) begin

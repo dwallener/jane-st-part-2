@@ -4,18 +4,18 @@
 
 module template_spi_peripheral (
     input wire clk, input wire rst_n, input wire drive_enable,
-    input wire [3:0] pin_in,
-    input wire [1:0] select_pin, input wire [1:0] clock_pin,
-    input wire [1:0] request_pin, input wire [1:0] response_pin,
+    input wire [7:0] pin_in,
+    input wire [2:0] select_pin, input wire [2:0] clock_pin,
+    input wire [2:0] request_pin, input wire [2:0] response_pin,
     input wire select_active_level, input wire clock_idle_level,
     input wire sample_trailing,
     input wire [7:0] request_mask, input wire [7:0] request_value,
     input wire [143:0] candidate_masks,
-    output reg [3:0] pin_out, output reg [3:0] pin_oe,
+    output reg [7:0] pin_out, output reg [7:0] pin_oe,
     output reg transfer_valid, output reg [7:0] transfer_request,
     output reg transfer_unknown
 );
-  reg [3:0] previous_pins;
+  reg [7:0] previous_pins;
   reg previous_selected;
   reg [2:0] bit_count;
   reg [7:0] request_shift, request_live;
