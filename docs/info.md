@@ -61,8 +61,10 @@ Dedicated outputs report:
 
 When `ui[7]=1` and `ui[4]=0`, normal status is replaced by a passive 32-page
 window. The page address is `{ui[1], ui[3:2], ui[6:5]}`; all command meanings
-on those five pins are suppressed while the window is active. `ui[4]=1` leaves
-status mode and retains its normal activate/contradiction meaning.
+on those five pins are suppressed while the window is active. `ui[0]=0` selects
+the engineering pages below; `ui[0]=1` selects the stable companion-MCU bank
+defined in `docs/COMPANION-LINK-001.md`. `ui[4]=1` leaves status mode and retains
+its normal activate/contradiction meaning.
 
 | Page | Input byte | Status returned on `uo[7:0]` |
 | --- | --- | --- |

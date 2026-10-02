@@ -21,8 +21,10 @@ module mindreader_core (
 
   // ui[7] enters a passive status window unless ui[4] explicitly requests a
   // contradiction. Status uses ui[1], ui[3:2], and ui[6:5] as a five-bit page
-  // address and suppresses every ordinary control side effect.
+  // address and suppresses every ordinary control side effect. ui[0] selects
+  // raw engineering pages (0) or the stable companion-MCU vocabulary (1).
   wire status_mode = enable && dedicated_in[7] && !dedicated_in[4];
+  wire companion_status_bank = status_mode && dedicated_in[0];
   wire [4:0] status_page = {dedicated_in[1], dedicated_in[3:2],
                             dedicated_in[6:5]};
   wire discover_enable = enable && !status_mode && dedicated_in[0];
@@ -461,7 +463,104 @@ module mindreader_core (
       default: paged_status = 8'hff;
     endcase
   end
-  assign dedicated_out = status_mode ? paged_status : normal_status;
+
+  localparam PRODUCT_RESET         = 8'h00;
+  localparam PRODUCT_OBSERVING     = 8'h01;
+  localparam PRODUCT_QUIET         = 8'h02;
+  localparam PRODUCT_AMBIGUOUS     = 8'h03;
+  localparam PRODUCT_PROBE_READY   = 8'h04;
+  localparam PRODUCT_INTERROGATING = 8'h05;
+  localparam PRODUCT_RESOLVED      = 8'h06;
+  localparam PRODUCT_MODEL_READY   = 8'h07;
+  localparam PRODUCT_EMULATING     = 8'h08;
+  localparam PRODUCT_COMPROMISED   = 8'he0;
+  localparam PRODUCT_CONTRADICTION = 8'he1;
+  localparam PRODUCT_CONTENTION    = 8'he2;
+  localparam PRODUCT_TIMEOUT       = 8'he3;
+  localparam PRODUCT_REVOKED       = 8'he4;
+
+  reg [7:0] product_state;
+  always @* begin
+    product_state = PRODUCT_OBSERVING;
+    if (!rst_n)
+      product_state = PRODUCT_RESET;
+    else if (contention_fault)
+      product_state = PRODUCT_CONTENTION;
+    else if (interrogation_timed_out)
+      product_state = PRODUCT_TIMEOUT;
+    else if (interrogation_revoked)
+      product_state = PRODUCT_REVOKED;
+    else if (interrogation_contradiction || knowledge_state == 8'h05)
+      product_state = PRODUCT_CONTRADICTION;
+    else if (evidence_saturated || knowledge_state == 8'h06)
+      product_state = PRODUCT_COMPROMISED;
+    else if (interrogation_busy)
+      product_state = PRODUCT_INTERROGATING;
+    else if (drive_enable)
+      product_state = PRODUCT_EMULATING;
+    else if (frozen_model_valid)
+      product_state = PRODUCT_MODEL_READY;
+    else if (interrogation_resolved || knowledge_state == 8'h01)
+      product_state = PRODUCT_RESOLVED;
+    else if (interrogation_proposal_valid)
+      product_state = PRODUCT_PROBE_READY;
+    else if (knowledge_state == 8'h02)
+      product_state = PRODUCT_AMBIGUOUS;
+    else if (bus_quiet)
+      product_state = PRODUCT_QUIET;
+  end
+
+  wire companion_fault = contention_fault || interrogation_contradiction ||
+                         interrogation_timed_out || interrogation_revoked ||
+                         evidence_saturated || knowledge_state == 8'h05;
+  wire companion_action_needed = interrogation_proposal_valid ||
+                                 frozen_model_valid || companion_fault;
+  wire spi_promotion_ready = physical_complete && direction_resolved &&
+                             timing_admissible && !frozen_model_valid &&
+                             !contention_fault;
+  wire [7:0] companion_flags = {
+      companion_fault,
+      companion_action_needed,
+      knowledge_safety[7],
+      interrogation_proposal_valid,
+      frozen_model_valid,
+      drive_enable,
+      interrogation_busy,
+      interrogation_resolved
+  };
+  wire [7:0] companion_buttons = {
+      spi_promotion_ready,
+      interrogation_eligible,
+      interrogation_proposal_valid,
+      1'b1,
+      companion_fault,
+      companion_fault || drive_enable || interrogation_busy,
+      1'b1,
+      1'b1
+  };
+
+  reg [7:0] companion_status;
+  always @* begin
+    case (status_page)
+      5'h00: companion_status = 8'h4d; // "M"
+      5'h01: companion_status = 8'h52; // "R"
+      5'h02: companion_status = 8'h01; // interface version
+      5'h03: companion_status = product_state;
+      5'h04: companion_status = companion_flags;
+      5'h05: companion_status = next_evidence;
+      5'h06: companion_status = companion_buttons;
+      5'h07: companion_status = normal_status;
+      5'h08: companion_status = {2'b00, interpretation_mask};
+      5'h09: companion_status = knowledge_reason;
+      5'h0a: companion_status = knowledge_safety;
+      5'h0b: companion_status = {3'b000, interrogation_candidate_count};
+      default: companion_status = 8'h00;
+    endcase
+  end
+
+  assign dedicated_out = status_mode
+      ? (companion_status_bank ? companion_status : paged_status)
+      : normal_status;
   assign bidir_out = selected_protocol_out;
   assign bidir_oe = selected_protocol_oe & {8{enable}};
 

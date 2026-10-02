@@ -22,6 +22,9 @@ module edge_trace_capture #(
     output wire [DELTA_BITS-1:0]   event_delta,
     output wire [PIN_WIDTH-1:0]    event_sample,
     output wire [PIN_WIDTH-1:0]    event_changed,
+    output reg  [PIN_WIDTH-1:0]    initial_sample,
+    output reg  [DELTA_BITS-1:0]   trailing_delta,
+    output reg                     capture_complete,
     output reg  [COUNT_BITS-1:0]   event_count,
     output reg                     overflow,
     output wire                    evidence_valid
@@ -56,6 +59,9 @@ module edge_trace_capture #(
       event_count <= {COUNT_BITS{1'b0}};
       previous_sample <= {PIN_WIDTH{1'b0}};
       delta_counter <= {DELTA_BITS{1'b0}};
+      initial_sample <= {PIN_WIDTH{1'b0}};
+      trailing_delta <= {DELTA_BITS{1'b0}};
+      capture_complete <= 1'b0;
       capturing <= 1'b0;
       overflow <= 1'b0;
       for (index = 0; index < DEPTH; index = index + 1) begin
@@ -65,11 +71,18 @@ module edge_trace_capture #(
       end
     end else begin
       if (!capture_enable) begin
+        if (capturing) begin
+          trailing_delta <= delta_counter;
+          capture_complete <= 1'b1;
+        end
         capturing <= 1'b0;
         delta_counter <= {DELTA_BITS{1'b0}};
       end else if (!capturing) begin
         capturing <= 1'b1;
         previous_sample <= pin_sample;
+        initial_sample <= pin_sample;
+        trailing_delta <= {DELTA_BITS{1'b0}};
+        capture_complete <= 1'b0;
         delta_counter <= {DELTA_BITS{1'b0}};
       end else if (sample_changed) begin
         previous_sample <= pin_sample;

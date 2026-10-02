@@ -1,7 +1,7 @@
 # TRACE-000: Cycle-Delta Edge Trace
 
-**Status:** implemented for Experiment 001  
-**Date:** 2026-09-30
+**Status:** software format implemented; anonymous RTL witness independently checked
+**Date:** 2026-10-02
 
 ## Purpose
 
@@ -83,9 +83,21 @@ uses select edges to delimit the transaction, response-valid to distinguish
 request and response phases, and clock edges to sample data. It does not yet
 infer pin roles, active levels, sampling edge, byte width, or bit order.
 
-## Hardware implications intentionally deferred
+## Synthesizable anonymous witness
 
-This document does not choose counter width, timestamp overflow behavior,
-buffer layout, marker encoding, compression, or capture bandwidth. Those are
-architecture decisions to make only after the trace experiments reveal the
-required operations and useful bounds.
+`src/edge_trace_capture.v` now implements the input-side hardware subset. A
+closed witness publishes the initial pin sample, delta-timed complete samples
+and changed masks, the quiet tail after the final event, completion, and
+overflow. `docs/EVIDENCE-WITNESS-001.md` defines the independent RTL/Python
+comparison.
+
+The hardware witness has no supplied markers and no separate output channel;
+all observed pins are anonymous. The richer Experiment 001 CSV remains a host
+interchange format rather than the literal FIFO layout.
+
+## Hardware implications still deferred
+
+The standalone recorder chooses parameterized counter width, FIFO depth, and
+explicit overflow behavior for testing. Top-level allocation, marker encoding,
+capture bandwidth, and whether records are retained or streamed remain
+architecture decisions. The witness is not yet part of the tapeout top.

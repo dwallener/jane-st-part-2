@@ -29,6 +29,9 @@ module tb_supervisor_capture;
   wire [7:0] event_delta;
   wire [3:0] event_sample;
   wire [3:0] event_changed;
+  wire [3:0] initial_sample;
+  wire [7:0] trailing_delta;
+  wire capture_complete;
   wire [2:0] event_count;
   wire overflow;
   wire evidence_valid;
@@ -51,6 +54,8 @@ module tb_supervisor_capture;
       .clear(capture_clear), .pin_sample(pin_sample), .pop(pop),
       .valid(trace_valid), .event_delta(event_delta),
       .event_sample(event_sample), .event_changed(event_changed),
+      .initial_sample(initial_sample), .trailing_delta(trailing_delta),
+      .capture_complete(capture_complete),
       .event_count(event_count), .overflow(overflow),
       .evidence_valid(evidence_valid)
   );
@@ -132,6 +137,15 @@ module tb_supervisor_capture;
     capture_clear = 0;
     if (overflow || !evidence_valid || event_count != 0)
       fail("capture clear did not restore empty valid state");
+
+    // A replayable observation includes its baseline and its quiet tail.
+    pin_sample = 4'b1010;
+    tick();
+    tick();
+    capture_enable = 0;
+    tick();
+    if (!capture_complete || initial_sample != 4'b1010 || trailing_delta != 1)
+      fail("capture did not preserve observation closure");
 
     $display("SUPERVISOR CAPTURE PASS");
     $finish(0);

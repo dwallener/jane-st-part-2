@@ -14,6 +14,17 @@ This is a prospective entry for Jane Street's
 The competition asks for an open-source, general-purpose protocol emulator in a
 6x4 Tiny Tapeout allocation targeting IHP's 130 nm CMOS5L process.
 
+The project's durable evidence history, current claims, corrections, and open
+limits live in [`FINDINGS.md`](FINDINGS.md). Material results should update that
+ledger rather than surviving only in development conversation.
+
+A product companion MCU can turn the dedicated command/status banks into
+buttons, LEDs, and human-readable display text without consuming an anonymous
+protocol pin. The stable versioned byte vocabulary is defined in
+[`docs/COMPANION-LINK-001.md`](docs/COMPANION-LINK-001.md).
+The corresponding physical controls, display states, and fail-safe firmware
+policy are defined in [`docs/THE-DECK-001.md`](docs/THE-DECK-001.md).
+
 The obvious solution is a small processor with instructions for reading pins,
 writing pins, and waiting an exact number of cycles. That would be useful, but
 it would also be one of many smaller variations on RP2040 PIO or TI PRU.

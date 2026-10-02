@@ -1,16 +1,24 @@
 # SPDX-FileCopyrightText: © 2026 Damir Wallener
 # SPDX-License-Identifier: Apache-2.0
 
+import sys
+from pathlib import Path
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, Timer
 
+HOST_MODEL = Path(__file__).resolve().parents[1] / "experiments" / "minimum_mindreader"
+sys.path.insert(0, str(HOST_MODEL))
+from companion_controller import AsicSnapshot, DeckController  # noqa: E402
+from companion_link import Command, ProductState, status_request  # noqa: E402
 
-DISCOVER = 1 << 0
-LEARN = 1 << 1
-PROMOTE = 1 << 2
-OWNERSHIP = 1 << 3
-ACTIVATE = 1 << 4
+
+DISCOVER = int(Command.DISCOVER)
+LEARN = int(Command.LEARN)
+PROMOTE = int(Command.PROMOTE)
+OWNERSHIP = int(Command.OWNERSHIP)
+ACTIVATE = int(Command.ACTIVATE)
 
 # Local SPI roles (clock, request, response, select) are deliberately scattered
 # across the eight physical bidirectional pins.
@@ -120,6 +128,20 @@ async def test_autonomous_mindreader_top(dut):
     dut.rst_n.value = 1
     await tick(dut)
 
+    # ui[0] selects the companion-MCU bank during a passive status read.
+    # Its identity and version give firmware a stable discovery handshake.
+    dut.ui_in.value = status_request(0, companion=True)
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0x4D
+    dut.ui_in.value = status_request(1, companion=True)
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0x52
+    dut.ui_in.value = status_request(2, companion=True)
+    await Timer(1, unit="ns")
+    assert int(dut.uo_out.value) == 0x01
+    dut.ui_in.value = 0
+    await tick(dut)
+
     # Quiet is an all-eight-pin claim. Activity on a pin outside the current
     # four-wire SPI link must reset the quiet interval without ever driving.
     await tick(dut, 65)
@@ -179,15 +201,30 @@ async def test_autonomous_mindreader_top(dut):
     assert not (int(dut.uo_out.value) & (1 << 2))
     assert int(dut.uio_oe.value) == 0
 
-    # Authorized promotion freezes the learned model; activation is separate.
-    dut.ui_in.value = OWNERSHIP | PROMOTE
+    # The product controller uses explicit capability bits, not a pretty-state
+    # guess, to promote and activate the model.
+    deck = DeckController()
+    dut.ui_in.value = deck.command(
+        AsicSnapshot(ProductState.AMBIGUOUS, int(dut.uo_out.value)),
+        listen_pressed=False, jack_pressed=True, active_switch=True,
+    )
     await tick(dut)
-    dut.ui_in.value = OWNERSHIP
+    dut.ui_in.value = deck.command(
+        AsicSnapshot(ProductState.MODEL_READY, int(dut.uo_out.value)),
+        listen_pressed=False, jack_pressed=False, active_switch=True,
+    )
     await tick(dut, 2)
     assert int(dut.uo_out.value) & (1 << 2)
-    dut.ui_in.value = OWNERSHIP | ACTIVATE
+    dut.ui_in.value = deck.command(
+        AsicSnapshot(ProductState.MODEL_READY, int(dut.uo_out.value)),
+        listen_pressed=False, jack_pressed=True, active_switch=True,
+    )
     await tick(dut)
     assert int(dut.uo_out.value) & (1 << 3)
+    dut.ui_in.value = deck.command(
+        AsicSnapshot(ProductState.EMULATING, int(dut.uo_out.value)),
+        listen_pressed=False, jack_pressed=False, active_switch=True,
+    )
 
     # The ninth request was never observed. The learned model must emit 0x63
     # on the inferred response pin while all other bidirectional pins stay Z.
